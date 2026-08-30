@@ -550,6 +550,14 @@ function flyOut(verdict) {
   setTimeout(() => judge(verdict), 180);
 }
 
+// キーボード（PCで開いた時）: 矢印キー=スワイプと同じ4方向 / Esc=閉じる
+document.addEventListener('keydown', e => {
+  if (sw.hidden) return;
+  const map = { ArrowRight: 'done', ArrowLeft: 'no', ArrowUp: 'want', ArrowDown: 'skip' };
+  if (map[e.key]) { e.preventDefault(); flyOut(map[e.key]); }
+  else if (e.key === 'Escape') closeSwipe();
+});
+
 // ドラッグ（マウス・指どちらでも）。しきい値: 横80px / 縦70px
 function attachDrag(el) {
   if (!el) return;
