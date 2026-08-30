@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>やりたいことリスト トップページ5案</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+:root{
+  --ink:#1b1b1f; --sub:#6b6b76; --line:#e6e4de; --bg:#faf8f4; --card:#fff;
+  --accent:#c0392b; --accent-soft:#fdecea; --want:#c98a00; --want-soft:#fdf3dd;
+  --ok:#2e7d4f; --ok-soft:#e6f4ec; --shadow:0 1px 2px rgba(0,0,0,.05);
+}
+*{box-sizing:border-box}
+body{margin:0;background:#eceae4;color:var(--ink);
+     font-family:"Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+     -webkit-font-smoothing:antialiased}
+.picker{position:sticky;top:0;z-index:30;background:rgba(236,234,228,.97);
+  backdrop-filter:blur(8px);padding:10px 14px;display:flex;gap:6px;overflow-x:auto;
+  border-bottom:1px solid #ddd}
+.picker button{font:inherit;font-weight:700;font-size:12.5px;border:1.5px solid #d5d2ca;
+  background:#fff;color:var(--sub);padding:8px 13px;border-radius:999px;cursor:pointer;
+  white-space:nowrap}
+.picker button[aria-selected=true]{background:var(--ink);border-color:var(--ink);color:#fff}
+.frame{max-width:420px;margin:14px auto 60px;background:var(--bg);border-radius:22px;
+  overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.13);min-height:740px}
+.note{max-width:420px;margin:-46px auto 40px;font-size:12px;color:#555;line-height:1.7;
+  padding:0 6px}
+section[hidden]{display:none}
+.bar8{height:7px;background:#efece6;border-radius:999px;overflow:hidden}
+.bar8 i{display:block;height:100%;background:var(--accent);border-radius:999px}
+
+/* ═ 案1: コックピット ═ */
+.p1{padding:22px 18px 30px}
+.p1 h1{font-size:19px;font-weight:800;margin:0}
+.p1 .sub{font-size:11.5px;color:var(--sub);margin-top:3px}
+.p1 .hero{display:flex;align-items:center;gap:18px;background:var(--card);
+  border:1px solid var(--line);border-radius:16px;padding:16px;margin:16px 0 10px;
+  box-shadow:var(--shadow)}
+.p1 svg{flex-shrink:0}
+.p1 .ring-num{font-size:21px;font-weight:800;fill:var(--ink)}
+.p1 .ring-cap{font-size:8.5px;fill:var(--sub)}
+.p1 .stats{display:grid;grid-template-columns:1fr 1fr;gap:7px 14px;flex:1}
+.p1 .stats b{font-size:17px;font-variant-numeric:tabular-nums}
+.p1 .stats span{display:block;font-size:10.5px;color:var(--sub)}
+.p1 .prow{display:flex;align-items:center;gap:11px;background:var(--card);
+  border:1px solid var(--line);border-radius:13px;padding:11px 13px;margin-top:8px;
+  box-shadow:var(--shadow)}
+.p1 .prow .ico{font-size:20px}
+.p1 .prow .mid{flex:1;min-width:0}
+.p1 .prow .nm{font-size:13px;font-weight:700;display:flex;justify-content:space-between}
+.p1 .prow .nm em{font-style:normal;color:var(--accent);font-variant-numeric:tabular-nums}
+.p1 .prow .bar8{margin-top:6px}
+.p1 .prow .sm{font-size:10.5px;color:var(--sub);margin-top:4px}
+.p1 .prow .go{color:#c9c5bc;font-size:18px}
+
+/* ═ 案2: シアター棚 ═ */
+.p2{padding:24px 16px 30px}
+.p2 h1{font-size:26px;font-weight:800;margin:0;letter-spacing:.01em;line-height:1.25}
+.p2 .sub{font-size:12px;color:var(--sub);margin:6px 0 18px}
+.p2 .shelf{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.p2 .bigcard{position:relative;border-radius:16px;overflow:hidden;aspect-ratio:4/5;
+  background:#c8c4bb;cursor:pointer}
+.p2 .bigcard.wide{grid-column:1/-1;aspect-ratio:2.15/1}
+.p2 .fan{position:absolute;inset:0;display:flex}
+.p2 .fan img{flex:1;object-fit:cover;min-width:0;opacity:.96}
+.p2 .veil{position:absolute;inset:0;background:linear-gradient(178deg,rgba(0,0,0,.05) 40%,rgba(0,0,0,.72))}
+.p2 .lab{position:absolute;left:13px;right:13px;bottom:11px;color:#fff}
+.p2 .lab b{font-size:15.5px;display:block;line-height:1.3;text-shadow:0 1px 4px rgba(0,0,0,.4)}
+.p2 .lab span{font-size:11px;opacity:.85}
+.p2 .pct{position:absolute;top:10px;right:10px;background:rgba(255,255,255,.94);
+  color:var(--ink);font-weight:800;font-size:12px;border-radius:999px;padding:4px 10px}
+.p2 .tile-emoji{position:absolute;inset:0;display:flex;align-items:center;
+  justify-content:center;font-size:64px}
+
+/* ═ 案3: リスト・ファースト ═ */
+.p3{padding:24px 20px 30px}
+.p3 h1{font-size:22px;font-weight:800;margin:0}
+.p3 .date{font-size:11px;color:var(--sub);margin:4px 0 16px}
+.p3 .paper{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:6px 16px 14px;box-shadow:var(--shadow)}
+.p3 .li{display:flex;align-items:center;gap:12px;padding:11px 0;
+  border-bottom:1px dashed #eae7e0}
+.p3 .li:last-child{border-bottom:0}
+.p3 .cb{width:23px;height:23px;border:2px solid #d8d4cc;border-radius:999px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;cursor:pointer}
+.p3 .li.done .cb{background:var(--ok);border-color:var(--ok)}
+.p3 .li.done .tx{text-decoration:line-through;color:var(--sub)}
+.p3 .tx{flex:1;font-size:14px;font-weight:600}
+.p3 .tx small{color:var(--sub);font-weight:400;margin-left:7px;font-size:11px}
+.p3 .more{text-align:center;font-size:12px;color:var(--sub);padding-top:10px}
+.p3 h2{font-size:13px;font-weight:800;color:var(--sub);margin:22px 0 10px;
+  letter-spacing:.06em}
+.p3 .chips{display:flex;gap:8px;flex-wrap:wrap}
+.p3 .chip{display:inline-flex;align-items:center;gap:6px;background:var(--card);
+  border:1.5px solid var(--line);border-radius:999px;padding:9px 14px;font-size:12.5px;
+  font-weight:700;cursor:pointer}
+.p3 .chip em{font-style:normal;font-size:10.5px;color:var(--accent)}
+.p3 .cta{display:block;width:100%;margin-top:20px;font:inherit;font-weight:800;
+  font-size:14px;border:0;border-radius:14px;padding:15px 0;cursor:pointer;
+  background:var(--accent);color:#fff}
+
+/* ═ 案4: クエストボード ═ */
+.p4{padding:22px 18px 30px}
+.p4 .lvrow{display:flex;align-items:center;gap:14px;background:var(--ink);color:#fff;
+  border-radius:16px;padding:14px 16px}
+.p4 .lv{width:52px;height:52px;border-radius:999px;background:linear-gradient(160deg,#f2b83b,#d98f14);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
+.p4 .lv b{font-size:17px;line-height:1}
+.p4 .lv span{font-size:8px;letter-spacing:.08em}
+.p4 .lvmid{flex:1}
+.p4 .lvmid .t{font-size:14px;font-weight:800}
+.p4 .lvmid .xp{height:8px;background:rgba(255,255,255,.18);border-radius:999px;
+  overflow:hidden;margin-top:7px}
+.p4 .lvmid .xp i{display:block;height:100%;background:#f2b83b;border-radius:999px}
+.p4 .lvmid .sm{font-size:10px;opacity:.75;margin-top:5px}
+.p4 .daily{display:flex;align-items:center;gap:10px;background:var(--want-soft);
+  border:1.5px solid #f0dcae;border-radius:13px;padding:11px 14px;margin:12px 0 16px;
+  font-size:12.5px;font-weight:700;cursor:pointer}
+.p4 .daily .em{font-size:19px}
+.p4 .daily .go{margin-left:auto;background:var(--want);color:#fff;border-radius:999px;
+  font-size:11px;padding:6px 12px}
+.p4 .qgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.p4 .q{background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:13px 13px 11px;box-shadow:var(--shadow);cursor:pointer;position:relative}
+.p4 .q .ico{font-size:26px}
+.p4 .q .nm{font-size:12.5px;font-weight:800;margin-top:7px;line-height:1.35}
+.p4 .q .bar8{margin-top:8px}
+.p4 .q .sm{font-size:10px;color:var(--sub);margin-top:5px;display:flex;
+  justify-content:space-between}
+.p4 .q .badge{position:absolute;top:9px;right:9px;font-size:10px;font-weight:800;
+  border-radius:999px;padding:3px 8px;background:var(--ok-soft);color:var(--ok)}
+.p4 .q .badge.zero{background:#f0eee8;color:var(--sub)}
+
+/* ═ 案5: ストーリーズ ═ */
+.p5{padding:20px 0 30px}
+.p5 .head{padding:0 18px;display:flex;align-items:baseline;justify-content:space-between}
+.p5 h1{font-size:18px;font-weight:800;margin:0}
+.p5 .head span{font-size:11px;color:var(--sub)}
+.p5 .strip{display:flex;gap:14px;overflow-x:auto;padding:14px 18px 6px;
+  scrollbar-width:none}
+.p5 .strip::-webkit-scrollbar{display:none}
+.p5 .story{flex-shrink:0;width:64px;text-align:center;cursor:pointer}
+.p5 .oring{width:62px;height:62px;border-radius:999px;padding:3px;
+  display:flex;align-items:center;justify-content:center;margin:0 auto}
+.p5 .oring .inner{width:100%;height:100%;border-radius:999px;background:var(--card);
+  display:flex;align-items:center;justify-content:center;font-size:26px;
+  border:2px solid #fff}
+.p5 .story .nm{font-size:9.5px;font-weight:700;margin-top:5px;color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p5 .story .pc{font-size:9px;color:var(--sub)}
+.p5 .feed{padding:8px 18px;display:flex;flex-direction:column;gap:10px}
+.p5 .fcard{background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:13px 15px;box-shadow:var(--shadow)}
+.p5 .fcard .k{font-size:10px;font-weight:800;color:var(--accent);letter-spacing:.05em}
+.p5 .fcard .k.w{color:var(--want)}
+.p5 .fcard .t{font-size:13.5px;font-weight:700;margin-top:5px;line-height:1.5}
+.p5 .fcard .row{display:flex;gap:8px;margin-top:9px}
+.p5 .fcard img{width:52px;aspect-ratio:2/3;object-fit:cover;border-radius:7px}
+.p5 .fcard .act{margin-top:10px;display:inline-block;background:var(--accent);
+  color:#fff;font-size:11.5px;font-weight:800;border-radius:999px;padding:7px 14px;
+  cursor:pointer}
+</style>
+</head>
+<body>
+<div class="picker" id="picker">
+  <button data-p="a1" aria-selected="true">案1 コックピット</button>
+  <button data-p="a2" aria-selected="false">案2 シアター棚</button>
+  <button data-p="a3" aria-selected="false">案3 リスト手帳</button>
+  <button data-p="a4" aria-selected="false">案4 クエストRPG</button>
+  <button data-p="a5" aria-selected="false">案5 ストーリーズ</button>
+</div>
+
+<!-- 案1 コックピット: 人生達成率がドンと出る計器盤 -->
+<section id="a1"><div class="frame"><div class="p1">
+  <h1>やりたいことリスト</h1>
+  <div class="sub">人生の棚卸しコックピット</div>
+  <div class="hero">
+    <svg width="108" height="108" viewBox="0 0 108 108">
+      <circle cx="54" cy="54" r="46" fill="none" stroke="#efece6" stroke-width="11"/>
+      <circle cx="54" cy="54" r="46" fill="none" stroke="#c0392b" stroke-width="11"
+        stroke-linecap="round" stroke-dasharray="90.6 198.4"
+        transform="rotate(-90 54 54)"/>
+      <text x="54" y="52" text-anchor="middle" class="ring-num">31%</text>
+      <text x="54" y="68" text-anchor="middle" class="ring-cap">人生達成率</text>
+    </svg>
+    <div class="stats">
+      <div><b>776</b><span>✅ やった</span></div>
+      <div><b>108</b><span>💛 やりたい</span></div>
+      <div><b>8</b><span>クエスト帳</span></div>
+      <div><b>1,592</b><span>のこり</span></div>
+    </div>
+  </div>
+  <div id="rows1"></div>
+</div></div>
+<p class="note">数字が主役の計器盤型。開いた瞬間に「人生の現在地」が1個の%で分かる。パックは細い行で全部見える。</p>
+</section>
+
+<!-- 案2 シアター棚: ビジュアルが主役の棚 -->
+<section id="a2" hidden><div class="frame"><div class="p2">
+  <h1>やりたいこと<br>リスト</h1>
+  <div class="sub">観た・行った・やったの棚卸し ── 776 やった ・ 108 やりたい</div>
+  <div class="shelf">
+    <div class="bigcard wide">
+      <div class="fan">
+        <img src="https://image.tmdb.org/t/p/w342/auQjFBfCWSL6DpQhWVCZ6wFtDm6.jpg" alt="">
+        <img src="https://image.tmdb.org/t/p/w342/qzb0slJerd5bQgJxteJ5oAmfp09.jpg" alt="">
+        <img src="https://image.tmdb.org/t/p/w342/nftQJb9550PtYFXhmTs7XiN0QhR.jpg" alt="">
+        <img src="https://image.tmdb.org/t/p/w342/8IT4wjo8EH1DlgSfgXuyqz36z8Z.jpg" alt="">
+        <img src="https://image.tmdb.org/t/p/w342/xQY1yhixcSSfKRhdlhzwN8Mra6q.jpg" alt="">
+      </div>
+      <div class="veil"></div><div class="pct">5%</div>
+      <div class="lab"><b>映画メジャー1000</b><span>✅ 47 ・ のこり953本</span></div>
+    </div>
+    <div class="bigcard">
+      <div class="fan">
+        <img src="https://image.tmdb.org/t/p/w342/l1SWn7SdwvAowNfC4ojV2B9LDgs.jpg" alt="">
+        <img src="https://image.tmdb.org/t/p/w342/4szrEPRLfw1iqk30tWywoL1uEqG.jpg" alt="">
+      </div>
+      <div class="veil"></div><div class="pct">73%</div>
+      <div class="lab"><b>アニメ人気1000</b><span>✅ 727 ・ 💛 108</span></div>
+    </div>
+    <div class="bigcard" style="background:#7f9c8b">
+      <div class="tile-emoji">🌍</div>
+      <div class="veil"></div><div class="pct">0%</div>
+      <div class="lab"><b>国 193</b><span>まだ手つかず</span></div>
+    </div>
+    <div class="bigcard" style="background:#9c8aa5">
+      <div class="tile-emoji">🏆</div>
+      <div class="veil"></div><div class="pct">0%</div>
+      <div class="lab"><b>定番バケットリスト</b><span>100個の定番体験</span></div>
+    </div>
+    <div class="bigcard" style="background:#8e9aaf">
+      <div class="tile-emoji">🧖</div>
+      <div class="veil"></div><div class="pct">4%</div>
+      <div class="lab"><b>サウナ名店</b><span>✅ 2 ・ のこり50</span></div>
+    </div>
+  </div>
+</div></div>
+<p class="note">Netflix/雑誌の棚型。ポスターのコラージュがそのままパックの顔になる。ビジュアル映え最優先、眺めて楽しい。</p>
+</section>
+
+<!-- 案3 リスト手帳: 「やりたいことリスト」という名前をそのままUIに -->
+<section id="a3" hidden><div class="frame"><div class="p3">
+  <h1>やりたいことリスト</h1>
+  <div class="date">8月30日（日）・ やりたいこと 108件</div>
+  <div class="paper" id="paper3"></div>
+  <h2>クエスト帳から探す</h2>
+  <div class="chips">
+    <span class="chip">📺 アニメ <em>73%</em></span>
+    <span class="chip">🎬 映画 <em>5%</em></span>
+    <span class="chip">🌍 国 <em>0%</em></span>
+    <span class="chip">🗾 都道府県 <em>0%</em></span>
+    <span class="chip">⛩️ 世界遺産 <em>0%</em></span>
+    <span class="chip">🎢 遊園地 <em>0%</em></span>
+    <span class="chip">🏆 バケット100 <em>0%</em></span>
+    <span class="chip">🧖 サウナ <em>4%</em></span>
+  </div>
+  <button class="cta">＋ スワイプでやりたいことを見つける</button>
+</div></div>
+<p class="note">名前どおり「リスト」が主役の手帳型。開くと自分のやりたいこと一覧がToDoみたいに並び、チェックを付ける喜びが中心。パック（達成率）は脇役に降格。</p>
+</section>
+
+<!-- 案4 クエストRPG: レベルとXPで人生をゲーム化 -->
+<section id="a4" hidden><div class="frame"><div class="p4">
+  <div class="lvrow">
+    <div class="lv"><b>7</b><span>LEVEL</span></div>
+    <div class="lvmid">
+      <div class="t">ユウキの人生クエスト</div>
+      <div class="xp"><i style="width:76%"></i></div>
+      <div class="sm">つぎのレベルまで あと24クエスト（✅ 通算776）</div>
+    </div>
+  </div>
+  <div class="daily"><span class="em">🎲</span>今日の10問に答える<span class="go">スタート</span></div>
+  <div class="qgrid">
+    <div class="q"><span class="badge">73%</span><div class="ico">📺</div>
+      <div class="nm">アニメ人気1000</div><div class="bar8"><i style="width:73%"></i></div>
+      <div class="sm"><span>✅727 💛108</span><span>★★★</span></div></div>
+    <div class="q"><span class="badge">5%</span><div class="ico">🎬</div>
+      <div class="nm">映画メジャー1000</div><div class="bar8"><i style="width:5%"></i></div>
+      <div class="sm"><span>✅47</span><span>★★★</span></div></div>
+    <div class="q"><span class="badge zero">未着手</span><div class="ico">🌍</div>
+      <div class="nm">国193</div><div class="bar8"><i style="width:0%"></i></div>
+      <div class="sm"><span>✅0</span><span>★★</span></div></div>
+    <div class="q"><span class="badge zero">未着手</span><div class="ico">🗾</div>
+      <div class="nm">都道府県47</div><div class="bar8"><i style="width:0%"></i></div>
+      <div class="sm"><span>✅0</span><span>★</span></div></div>
+    <div class="q"><span class="badge zero">未着手</span><div class="ico">🏆</div>
+      <div class="nm">定番バケットリスト</div><div class="bar8"><i style="width:0%"></i></div>
+      <div class="sm"><span>✅0</span><span>★★</span></div></div>
+    <div class="q"><span class="badge">4%</span><div class="ico">🧖</div>
+      <div class="nm">サウナ名店</div><div class="bar8"><i style="width:4%"></i></div>
+      <div class="sm"><span>✅2</span><span>★</span></div></div>
+  </div>
+</div></div>
+<p class="note">RPG型。通算✅がXPになりレベルが上がる（100件=1レベル）。「今日の10問」で毎日ちょっとずつ進める習慣導線つき。★はパックのボリューム。</p>
+</section>
+
+<!-- 案5 ストーリーズ: SNSアプリの文法 -->
+<section id="a5" hidden><div class="frame"><div class="p5">
+  <div class="head"><h1>やりたいことリスト</h1><span>✅776 ・ 💛108</span></div>
+  <div class="strip" id="strip5"></div>
+  <div class="feed">
+    <div class="fcard"><div class="k">つづきから</div>
+      <div class="t">映画メジャー1000 ── のこり953本</div>
+      <div class="row">
+        <img src="https://image.tmdb.org/t/p/w342/zhqrRtBVHAbHqLl9O5dMYAHeyFH.jpg" alt="">
+        <img src="https://image.tmdb.org/t/p/w342/98LQsdCFEP9ubfhDI8YOB72AkOm.jpg" alt="">
+        <img src="https://image.tmdb.org/t/p/w342/HZ9wW4KbX73rR5PQpgsuOkCU99.jpg" alt="">
+      </div>
+      <span class="act">スワイプ再開 →</span></div>
+    <div class="fcard"><div class="k w">💛 やりたいから3つ</div>
+      <div class="t">ノラガミ ・ どろろ ・ ゴールデンタイム<br>
+        <small style="color:var(--sub);font-weight:400">積んでるアニメ、今夜どれか観る？</small></div></div>
+    <div class="fcard"><div class="k">はじめてみる</div>
+      <div class="t">🌍 国193 ── 行ったことある国、数えてみない？</div>
+      <span class="act">1分でチェック →</span></div>
+  </div>
+</div></div>
+<p class="note">SNS型。上の丸アイコン（進み具合のリングつき）がパック、下は「つづきから」「やりたいから拾う」「新しく始める」を勧めてくるフィード。毎日開く導線が一番強い。</p>
+</section>
+
+<script>
+const PACKS = [
+  {i:'📺',n:'アニメ人気1000',d:727,t:1000,w:108},
+  {i:'🎬',n:'映画メジャー1000',d:47,t:1000,w:0},
+  {i:'🌍',n:'国',d:0,t:193,w:0},
+  {i:'🗾',n:'都道府県',d:0,t:47,w:0},
+  {i:'⛩️',n:'日本の世界遺産',d:0,t:26,w:0},
+  {i:'🎢',n:'遊園地アトラクション',d:0,t:58,w:0},
+  {i:'🏆',n:'定番バケットリスト',d:0,t:100,w:0},
+  {i:'🧖',n:'サウナ名店',d:2,t:52,w:0}];
+const pct = p => Math.round(100 * p.d / p.t);
+
+document.getElementById('picker').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  document.querySelectorAll('.picker button').forEach(x =>
+    x.setAttribute('aria-selected', String(x === b)));
+  document.querySelectorAll('body > section').forEach(s =>
+    s.hidden = s.id !== b.dataset.p);
+  scrollTo(0, 0);
+});
+
+// 案1 パック行
+document.getElementById('rows1').innerHTML = PACKS.map(p => `
+  <div class="prow"><span class="ico">${p.i}</span>
+    <div class="mid">
+      <div class="nm">${p.n}<em>${pct(p)}%</em></div>
+      <div class="bar8"><i style="width:${pct(p)}%"></i></div>
+      <div class="sm">✅ ${p.d}/${p.t}${p.w ? ' ・ 💛 ' + p.w : ''}</div>
+    </div><span class="go">›</span></div>`).join('');
+
+// 案3 やりたい手帳（実際のやりたい=アニメ積みから）
+const WANTS = [['ノラガミ','アニメ',false],['どろろ','アニメ',false],
+  ['ゴールデンタイム','アニメ',false],['銀魂','アニメ',true],
+  ['青の祓魔師','アニメ',false],['ソウルイーター','アニメ',false]];
+document.getElementById('paper3').innerHTML = WANTS.map(([t, g, done]) => `
+  <div class="li${done ? ' done' : ''}">
+    <span class="cb">${done ? '✓' : ''}</span>
+    <span class="tx">${t}<small>${g}</small></span>
+  </div>`).join('') + `<div class="more">ほか 102件 ▾</div>`;
+document.getElementById('paper3').addEventListener('click', e => {
+  const li = e.target.closest('.li'); if (!li) return;
+  li.classList.toggle('done');
+  li.querySelector('.cb').textContent = li.classList.contains('done') ? '✓' : '';
+});
+
+// 案5 ストーリー列（進み具合のリング）
+document.getElementById('strip5').innerHTML = PACKS.map(p => `
+  <div class="story">
+    <div class="oring" style="background:conic-gradient(#c0392b ${pct(p) * 3.6}deg, #e6e4de 0deg)">
+      <div class="inner">${p.i}</div>
+    </div>
+    <div class="nm">${p.n}</div><div class="pc">${pct(p)}%</div>
+  </div>`).join('');
+</script>
+</body>
+</html>
