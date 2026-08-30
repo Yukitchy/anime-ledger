@@ -346,15 +346,16 @@ const OUTBOX_KEY = 'quest-outbox-v1';
 const local = JSON.parse(localStorage.getItem(LOCAL_KEY) || '{}');
 let outbox = JSON.parse(localStorage.getItem(OUTBOX_KEY) || '[]');
 
-// パックごとの動詞。「やった」はケースに応じて 観た/読んだ/行った/乗った に変わる
+// パックごとの動詞。やった/やってない/やりたい がケースに応じて変わる
+const MITA = {done:'観た', no:'観てない', want:'観たい'};
+const ITTA = {done:'行った', no:'行ってない', want:'行きたい'};
 const VERBS = {
-  anime1000: {done:'観た', no:'観てない'}, movies1000: {done:'観た', no:'観てない'},
-  manga1000: {done:'読んだ', no:'読んでない'},
-  countries: {done:'行った', no:'行ってない'}, prefectures: {done:'行った', no:'行ってない'},
-  'heritage-jp': {done:'行った', no:'行ってない'}, sauna100: {done:'行った', no:'行ってない'},
-  attractions: {done:'乗った', no:'乗ってない'},
+  anime1000: MITA, movies1000: MITA,
+  manga1000: {done:'読んだ', no:'読んでない', want:'読みたい'},
+  countries: ITTA, prefectures: ITTA, 'heritage-jp': ITTA, sauna100: ITTA,
+  attractions: {done:'乗った', no:'乗ってない', want:'乗りたい'},
 };
-const verbsOf = slug => VERBS[slug] || {done:'やった', no:'やってない'};
+const verbsOf = slug => VERBS[slug] || {done:'やった', no:'やってない', want:'やりたい'};
 
 const verdictOf = (slug, id) =>
   (local[slug] || {})[id] || (QUEST.base[slug] || {})[id] || '';
@@ -475,7 +476,7 @@ function openSwipe(slug) {
   const V = verbsOf(slug);
   sw.querySelector('.b-no').innerHTML = `<span class="em">✖️</span>← ${V.no}`;
   sw.querySelector('.b-skip').innerHTML = `<span class="em">🌓</span>↓ 途中`;
-  sw.querySelector('.b-want').innerHTML = `<span class="em">💛</span>↑ やりたい`;
+  sw.querySelector('.b-want').innerHTML = `<span class="em">💛</span>↑ ${V.want}`;
   sw.querySelector('.b-done').innerHTML = `<span class="em">✅</span>${V.done} →`;
   sw.hidden = false;
   document.body.style.overflow = 'hidden';
@@ -498,7 +499,7 @@ function swCardHTML(it, cls) {
     ${it.s ? `<div class="s">${esc(String(it.s))}</div>` : ''}</div>
     <span class="sw-tag done">✅ ${verbsOf(deckPack.slug).done}</span>
     <span class="sw-tag no">✖️ ${verbsOf(deckPack.slug).no}</span>
-    <span class="sw-tag want">💛 やりたい</span><span class="sw-tag skip">🌓 途中</span></div>`;
+    <span class="sw-tag want">💛 ${verbsOf(deckPack.slug).want}</span><span class="sw-tag skip">🌓 途中</span></div>`;
 }
 
 function dealCards() {
@@ -507,7 +508,7 @@ function dealCards() {
   if (!deck.length) {
     const s = packStats(deckPack);
     stage.innerHTML = `<div class="sw-fin"><b>${deckPack.icon} ${esc(deckPack.name)}、全部判定ずみ！</b><br>
-      ✅ ${verbsOf(deckPack.slug).done} ${s.done} ／ 💛 やりたい ${s.want}<br>
+      ✅ ${verbsOf(deckPack.slug).done} ${s.done} ／ 💛 ${verbsOf(deckPack.slug).want} ${s.want}<br>
       <button class="x" style="width:auto;padding:0 18px;margin-top:10px" id="sw-fin-close">一覧へもどる</button></div>`;
     document.getElementById('sw-fin-close').addEventListener('click', closeSwipe);
     return;
