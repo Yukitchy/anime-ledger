@@ -303,7 +303,8 @@ function render() {
   count.style.display = inQuest ? 'none' : '';
   if (inQuest) { renderQuest(); return; }
 
-  const rows = view === 'anime' ? ANIME : view === 'movie' ? MOVIES : SAUNA;
+  const rows = view.startsWith('pack:') ? packRows(view.slice(5))
+             : view === 'anime' ? ANIME : view === 'movie' ? MOVIES : SAUNA;
   const needle = q.value.trim().toLowerCase();
   const hits = needle
     ? rows.filter(m => (m.title + ' ' + (m.english || '')).toLowerCase().includes(needle))
@@ -314,7 +315,8 @@ function render() {
 
   let html = '', head = null;
   for (const m of hits) {
-    const g = view === 'anime' ? (m.year ? m.year + '年' : '年不明')
+    const g = view.startsWith('pack:') ? (m.kind || 'その他')
+            : view === 'anime' ? (m.year ? m.year + '年' : '年不明')
             : m.date ? m.date.slice(0, 4) + '年'
             : (view === 'movie' ? '劇場で観た記録がないもの' : '日付の記録なし');
     if (g !== head) { html += `<h2 class="yr">${esc(g)}</h2>`; head = g; }
@@ -323,13 +325,15 @@ function render() {
   grid.innerHTML = html;
 }
 
-document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
+document.querySelector('.tabs').addEventListener('click', e => {
+  const b = e.target.closest('button[data-view]');
+  if (!b) return;
   view = b.dataset.view;
   document.querySelectorAll('.tabs button').forEach(x =>
     x.setAttribute('aria-selected', String(x === b)));
   window.scrollTo({ top: 0 });
   render();
-}));
+});
 q.addEventListener('input', render);
 // 題字クリック=トップ（クエスト一覧）へ
 document.getElementById('home').addEventListener('click', () => {
@@ -410,6 +414,40 @@ function renderQuest() {
     for (const it of p.items)
       if (verdictOf(p.slug, it.id) === 'want') wantTotal++;
   document.getElementById('wantcount').textContent = wantTotal ? ` ${wantTotal}件` : '';
+  syncPackTabs();
+}
+
+// ── 済みにした項目を上のタブからも見られるように ──────────────
+// 証拠タブ（アニメ/映画/サウナ）と重ならないパックだけ、done が1件でもあれば足す
+const OWN_TAB = new Set(['anime1000', 'movies1000', 'sauna100']);
+
+function packRows(slug) {
+  const p = QUEST.packs.find(x => x.slug === slug);
+  if (!p) return [];
+  return p.items
+    .filter(it => verdictOf(slug, it.id) === 'done')
+    .map(it => ({ key: 'p' + slug + it.id, title: it.t,
+                  cover: it.img || '', kind: it.s || '' }))
+    .sort((a, b) => a.kind.localeCompare(b.kind, 'ja') ||
+                    a.title.localeCompare(b.title, 'ja'));
+}
+
+function syncPackTabs() {
+  const tabs = document.querySelector('.tabs');
+  tabs.querySelectorAll('button[data-view^="pack:"]').forEach(b => b.remove());
+  for (const p of QUEST.packs) {
+    if (OWN_TAB.has(p.slug)) continue;
+    const n = packStats(p).done;
+    if (!n) continue;
+    const b = document.createElement('button');
+    b.setAttribute('role', 'tab');
+    b.setAttribute('aria-selected', 'false');
+    b.dataset.view = 'pack:' + p.slug;
+    // タブは幅が命なので「漫画人気1000」→「漫画」のように件数の接尾辞は落とす
+    b.innerHTML = esc(p.name.replace(/(人気|メジャー)?\d{2,4}$/, '')) +
+                  `<span class="n">${n}</span>`;
+    tabs.appendChild(b);
+  }
 }
 
 quest.addEventListener('click', e => {
