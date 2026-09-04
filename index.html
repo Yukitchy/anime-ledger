@@ -126,6 +126,7 @@ footer a{color:var(--sub)}
 .sw-card .m{padding:12px 14px 15px}
 .sw-card .m .t{font-size:15px;-webkit-line-clamp:2}
 .sw-card .m .s{font-size:12px}
+.sw-card .m .lnk{display:inline-block;margin-top:8px;font-size:12px;color:var(--accent);text-decoration:underline}
 .sw-card.top{cursor:grab;transition:none}
 .sw-card.under{transform:scale(.94);opacity:.6}
 .sw-card.fly{transition:transform .25s ease,opacity .25s ease;opacity:0}
@@ -359,6 +360,7 @@ const VERBS = {
   manga1000: {done:'読んだ', no:'読んでない', want:'読みたい'},
   countries: ITTA, prefectures: ITTA, 'heritage-jp': ITTA, sauna100: ITTA,
   attractions: {done:'乗った', no:'乗ってない', want:'乗りたい'},
+  'events-2026': {done:'行った', no:'興味ない', want:'行きたい'},
 };
 const verbsOf = slug => VERBS[slug] || {done:'やった', no:'やってない', want:'やりたい'};
 
@@ -547,7 +549,8 @@ function swCardHTML(it, cls) {
     : `<div class="ph" style="background:${tile(it.t)}">${esc(it.e || [...it.t][0] || '?')}</div>`;
   return `<div class="sw-card ${cls}" data-id="${esc(it.id)}">${img}
     <div class="m"><div class="t">${esc(it.t)}</div>
-    ${it.s ? `<div class="s">${esc(String(it.s))}</div>` : ''}</div>
+    ${it.s ? `<div class="s">${esc(String(it.s))}</div>` : ''}
+    ${it.url ? `<a class="lnk" href="${esc(it.url)}" target="_blank" rel="noopener" onpointerdown="event.stopPropagation()">詳細を見る ↗</a>` : ''}</div>
     <span class="sw-tag done">✅ ${verbsOf(deckPack.slug).done}</span>
     <span class="sw-tag no">✖️ ${verbsOf(deckPack.slug).no}</span>
     <span class="sw-tag want">💛 ${verbsOf(deckPack.slug).want}</span><span class="sw-tag skip">🌓 途中</span></div>`;
