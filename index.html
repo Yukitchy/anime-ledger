@@ -147,7 +147,9 @@ footer a{color:var(--sub)}
                 border:1px solid var(--line);background:var(--card);border-radius:3px;
                 padding:12px 0;width:88px;cursor:pointer;box-shadow:var(--shadow);
                 line-height:1.35}
-.sw-btns .em{display:block;font-size:19px}
+.sw-btns .em{display:block;width:24px;height:24px;margin:0 auto 4px}
+.sw-tag img{width:20px;height:20px;vertical-align:-4px;margin-right:4px}
+.sw-fin img{width:16px;height:16px;vertical-align:-3px}
 .sw-btns .b-no{color:var(--no)} .sw-btns .b-done{color:var(--ok)}
 .sw-btns .b-want{color:var(--want)} .sw-btns .b-skip{color:var(--sub)}
 .sw-btns button:active{transform:scale(.96)}
@@ -210,10 +212,10 @@ footer a{color:var(--sub)}
   <div class="sw-stage" id="sw-stage"></div>
   <button class="sw-undo" id="sw-undo" hidden>← 1つ戻す</button>
   <div class="sw-btns">
-    <button class="b-no"   data-v="no"><span class="em">✖️</span>やってない</button>
-    <button class="b-skip" data-v="skip"><span class="em">🌓</span>途中</button>
-    <button class="b-want" data-v="want"><span class="em">💛</span>やりたい</button>
-    <button class="b-done" data-v="done"><span class="em">✅</span>やった</button>
+    <button class="b-no"   data-v="no"><img class="em" src="icons/no.png" alt="">やってない</button>
+    <button class="b-skip" data-v="skip"><img class="em" src="icons/skip.png" alt="">途中</button>
+    <button class="b-want" data-v="want"><img class="em" src="icons/want.png" alt="">やりたい</button>
+    <button class="b-done" data-v="done"><img class="em" src="icons/done.png" alt="">やった</button>
   </div>
 </div>
 
@@ -534,11 +536,11 @@ function openSwipe(slug) {
   document.getElementById('sw-name').textContent =
     `${deckPack.icon} ${deckPack.name}`;
   const V = verbsOf(slug);
-  sw.querySelector('.b-no').innerHTML = `<span class="em">✖️</span>← ${V.no}`;
-  sw.querySelector('.b-skip').innerHTML = `<span class="em">🌓</span>↓ 途中`;
+  sw.querySelector('.b-no').innerHTML = `<img class="em" src="icons/no.png" alt="">← ${V.no}`;
+  sw.querySelector('.b-skip').innerHTML = `<img class="em" src="icons/skip.png" alt="">↓ 途中`;
   sw.querySelector('.b-skip').hidden = V.skip === false;
-  sw.querySelector('.b-want').innerHTML = `<span class="em">💛</span>↑ ${V.want}`;
-  sw.querySelector('.b-done').innerHTML = `<span class="em">✅</span>${V.done} →`;
+  sw.querySelector('.b-want').innerHTML = `<img class="em" src="icons/want.png" alt="">↑ ${V.want}`;
+  sw.querySelector('.b-done').innerHTML = `<img class="em" src="icons/done.png" alt="">${V.done} →`;
   sw.hidden = false;
   document.body.style.overflow = 'hidden';
   dealCards();
@@ -564,9 +566,9 @@ function swCardHTML(it, cls) {
     ${(() => { const u = it.url || (PLACE_PACKS.has(deckPack.slug)
         ? 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(`${it.t} ${String(it.s || '').split('・')[0]}`) : '');
       return u ? `<a class="lnk" href="${esc(u)}" target="_blank" rel="noopener" onpointerdown="event.stopPropagation()">${it.url ? '詳細を見る' : '地図で見る'} ↗</a>` : ''; })()}</div>
-    <span class="sw-tag done">✅ ${verbsOf(deckPack.slug).done}</span>
-    <span class="sw-tag no">✖️ ${verbsOf(deckPack.slug).no}</span>
-    <span class="sw-tag want">💛 ${verbsOf(deckPack.slug).want}</span><span class="sw-tag skip">🌓 途中</span></div>`;
+    <span class="sw-tag done"><img src="icons/done.png" alt="">${verbsOf(deckPack.slug).done}</span>
+    <span class="sw-tag no"><img src="icons/no.png" alt="">${verbsOf(deckPack.slug).no}</span>
+    <span class="sw-tag want"><img src="icons/want.png" alt="">${verbsOf(deckPack.slug).want}</span><span class="sw-tag skip"><img src="icons/skip.png" alt="">途中</span></div>`;
 }
 
 function dealCards() {
@@ -575,7 +577,7 @@ function dealCards() {
   if (!deck.length) {
     const s = packStats(deckPack);
     stage.innerHTML = `<div class="sw-fin"><b>${deckPack.icon} ${esc(deckPack.name)}、全部判定ずみ！</b><br>
-      ✅ ${verbsOf(deckPack.slug).done} ${s.done} ／ 💛 ${verbsOf(deckPack.slug).want} ${s.want}<br>
+      <img src="icons/done.png" alt=""> ${verbsOf(deckPack.slug).done} ${s.done} ／ <img src="icons/want.png" alt=""> ${verbsOf(deckPack.slug).want} ${s.want}<br>
       <button class="x" style="width:auto;padding:0 18px;margin-top:10px" id="sw-fin-close">一覧へもどる</button></div>`;
     document.getElementById('sw-fin-close').addEventListener('click', closeSwipe);
     return;
