@@ -30,7 +30,7 @@ h1{font-size:21px;font-weight:800;margin:0;letter-spacing:.01em;color:#fff;curso
 .evidence .nw{white-space:nowrap}
 
 .bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-bottom:14px}
-.tabs{display:inline-flex;background:rgba(255,255,255,.18);border-radius:999px;padding:3px;gap:2px}
+.tabs{display:inline-flex;flex-wrap:wrap;max-width:100%;background:rgba(255,255,255,.18);border-radius:24px;padding:3px;gap:2px}
 .tabs button{font:inherit;font-weight:700;font-size:14px;border:0;cursor:pointer;
              background:transparent;color:#f8ddd9;padding:8px 16px;border-radius:999px;
              white-space:nowrap}
@@ -156,7 +156,7 @@ footer a{color:var(--sub)}
 @media (max-width:520px){
   .grid{grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:12px 10px}
   .count{margin-left:0;width:100%}
-  .tabs{max-width:100%;overflow-x:auto}
+  .tabs{flex-wrap:nowrap;overflow-x:auto;border-radius:999px}
   .tabs button{padding:8px 11px;font-size:13px}
   .tabs .n{margin-left:3px}
   .sw-btns button{width:23%}
