@@ -71,6 +71,8 @@ button{font-family:inherit}
 
 footer{max-width:1400px;margin:40px auto 0;padding:18px 40px 40px;border-top:3px solid var(--ink);font-size:12px;font-weight:700;line-height:1.8}
 footer a{color:var(--ink)}
+footer summary{cursor:pointer;font-weight:900;font-size:13px;list-style:none}footer summary::-webkit-details-marker{display:none}
+footer summary::after{content:' ＋'}footer details[open] summary::after{content:' −'}footer details[open] summary{margin-bottom:6px}
 footer .nw{white-space:nowrap}
 
 .mm,.mhero,.bnav,.mc{display:none}
@@ -156,7 +158,7 @@ footer .nw{white-space:nowrap}
 <div class="toc"><h2 id="T"></h2><input type="search" class="find" id="q" placeholder="作品名でしぼり込む" aria-label="作品名でしぼり込む"><div id="L"></div></div>
 </div>
 <nav class="bnav" id="BN"></nav>
-<footer>
+<footer><details><summary>出典と注意書き</summary>
   アニメの情報とカバー画像は <a href="https://anilist.co" rel="noopener">AniList</a>、
   映画のポスターと邦題は <a href="https://www.themoviedb.org" rel="noopener">TMDB</a> より。
   This product uses the TMDB API but is not endorsed or certified by TMDB.
@@ -164,7 +166,7 @@ footer .nw{white-space:nowrap}
   サウナの施設写真は <a href="https://sauna-ikitai.com" rel="noopener">サウナイキタイ</a> より。
   <a href="wants.html">やりたいことだけの一覧</a><br>
   <span class="nw">アニメ 874本</span> <span class="nw">映画 207本</span> <span class="nw">サウナ 10施設・のべ13回</span> <span class="nw">（アニメの申告は 1500本+）</span><br>アニメはPodcastでの言及、映画はチケットの購入記録、サウナは入館の記録が根拠です<br><span id="qnote"></span>
-</footer>
+</details></footer>
 
 <div class="sh" id="PS" hidden><div class="shp" role="dialog" aria-modal="true"><button class="shx" aria-label="閉じる">×</button><img id="SI" alt=""><div class="shb"><p class="shq" id="SQ"></p><h3 id="ST"></h3><p class="shm" id="SM"></p><div class="shv" id="SV"></div><div class="shs" id="SS" role="group" aria-label="評価"></div><a class="sha" id="SA" target="_blank" rel="noopener"></a></div></div></div>
 
