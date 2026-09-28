@@ -89,12 +89,10 @@ footer .nw{white-space:nowrap}
  .mm{display:grid;width:58px;height:58px;font-size:36px;flex:none}
  .sw{flex:1;margin:0;height:58px}.sw a{padding:0 8px;font-size:19px}
  .mhero{display:flex;flex-direction:column;position:relative;height:calc(100svh - 176px - env(safe-area-inset-bottom));min-height:420px}
- .want .pg{flex:1;min-height:0;grid-template-rows:repeat(2,minmax(0,1fr))}.want .pg img{height:100%;min-height:0;aspect-ratio:auto}
- .mrail,.mhero .go{flex:none}
+ .want .pg{flex:1;min-height:0;grid-template-rows:repeat(3,minmax(0,1fr))}.want .pg img{height:100%;min-height:0;aspect-ratio:auto}
+ .mhero .go{flex:none}
  .pg{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}.pg img,.pg .ph{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:5px;display:block}
  .pg>:first-child{grid-column:span 2;grid-row:span 2}
- .mrail{display:flex;align-items:flex-start;gap:5px;margin-top:5px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}.mrail::-webkit-scrollbar{display:none}
- .mrail img{flex:none;width:calc((100% - 10px)/3);aspect-ratio:2/3;object-fit:cover;border-radius:5px;display:block}
  .go{display:block;width:100%;margin-top:12px;border:0;border-radius:10px;background:var(--on);color:var(--ont);padding:14px;font:900 16px/1 "Hiragino Sans",sans-serif;cursor:pointer}
  .find{margin-top:0}.done .toc .yy:first-of-type{margin-top:18px}
  .bnav{display:flex;position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-top:3px solid var(--ink);padding:8px 10px calc(8px + env(safe-area-inset-bottom));gap:6px;overflow-x:auto;scrollbar-width:none;z-index:50;-webkit-transform:translateZ(0);transform:translateZ(0)}
@@ -103,6 +101,13 @@ footer .nw{white-space:nowrap}
  footer{padding:18px 16px calc(96px + env(safe-area-inset-bottom));margin-top:24px}
 }
 .go{display:none}@media(max-width:900px){.go{display:block}}
+/* スマホのやりたい画面: 縦には動かさない。出典は画像の下の隙間に小さく置き、押すと上に開く */
+@media(max-width:900px){
+ html:has(body.want),body.want{height:100%;overflow:hidden;overscroll-behavior:none}
+ .want footer{position:fixed;right:10px;bottom:calc(62px + env(safe-area-inset-bottom));margin:0;padding:0;border:0;z-index:45;max-width:calc(100% - 20px);font-size:10px;line-height:1.6}
+ .want footer summary{text-align:right;opacity:.55;list-style:none;cursor:pointer}.want footer summary::-webkit-details-marker{display:none}
+ .want footer details[open]{background:var(--bg);border:2px solid var(--ink);border-radius:10px;padding:8px 10px;max-height:50svh;overflow:auto}
+}
 
 /* 作品シート: ポスターを押すと大きく出して、その場で判定・見に行ける */
 .sh{position:fixed;inset:0;background:rgba(17,17,17,.55);z-index:100;display:grid;place-items:center;padding:24px}.sh[hidden]{display:none}
@@ -315,9 +320,8 @@ function drawDone() {
 
 function drawWant() {
   const p = PACKS[cur], s = stat(p);
-  // 開くたびに全部バラバラ: 上の3枚（左上の大1＋右2）は固定の枠、残りは横に流れる帯（ループ用に2周ぶん並べる）
-  const pool = shuffle(wantPool(p)).slice(0, 40), pic = it => img(it.img, `q:${p.slug}:${it.id}`, false), rest = pool.slice(3).map(pic).join('');
-  $('MH').innerHTML = `<div class="pg">${pool.slice(0, 3).map(pic).join('')}</div>` + (rest ? `<div class="mrail">${rest}${rest}</div>` : '') +
+  // 開くたびに全部バラバラ: 左上の大1＋右2＋下の段3の6枚
+  $('MH').innerHTML = `<div class="pg">${shuffle(wantPool(p)).slice(0, 6).map(it => img(it.img, `q:${p.slug}:${it.id}`, false)).join('')}</div>` +
     (s.left ? `<button class="go" data-slug="${esc(p.slug)}">まとめて判定する</button>` : '');
   $('BN').innerHTML = PACKS.map((p, i) => `<button class="${i == cur ? 'on' : ''}" data-i="${i}">${esc(short(p.name))}</button>`).join('');
 }
@@ -335,18 +339,6 @@ const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { cons
 // やりたい側に出すのは「まだ」の分だけ。やりたいと言ったものを先に、残りは未判定・観てない
 const wantPool = p => { const left = p.items.filter(it => it.img && verdictOf(p.slug, it.id) !== 'done');
   return [...shuffle(left.filter(it => verdictOf(p.slug, it.id) === 'want')), ...shuffle(left.filter(it => verdictOf(p.slug, it.id) !== 'want'))]; };
-// スマホの帯: 常にゆっくり左→右へ流す。指で触っている間と少しのあいだは止める。動きを減らす設定なら流さない
-(() => { let pos = null, el = null, hold = 0, t0 = 0;
-  const still = matchMedia('(prefers-reduced-motion: reduce)');
-  const pause = () => { hold = performance.now() + 2500; pos = null; };
-  ['pointerdown', 'touchstart', 'wheel'].forEach(ev => addEventListener(ev, e => { if (e.target.closest && e.target.closest('.mrail')) pause(); }, { passive: true }));
-  const tick = t => { const dt = Math.min(t - t0, 50); t0 = t; const r = document.querySelector('.mrail');
-    if (r !== el) { el = r; pos = null; }
-    if (r && r.offsetParent && !still.matches && t > hold) { const half = r.scrollWidth / 2;
-      if (pos === null) pos = r.scrollLeft || half;
-      pos -= dt * 0.025; if (pos <= 0) pos += half; if (pos > half) pos -= half; r.scrollLeft = pos; }
-    requestAnimationFrame(tick); };
-  requestAnimationFrame(tick); })();
 const redraw = () => { if (mode == 'want') { drawToc(); drawWant(); } else drawDone(); };
 
 if (mode == 'want') {
