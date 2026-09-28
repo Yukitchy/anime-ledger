@@ -40,10 +40,18 @@ summary .chev{margin-left:auto;transition:transform .15s}
 details[open] summary .chev{transform:rotate(90deg)}
 summary .copy{font-size:12px;font-weight:800;border:2px solid var(--ink);background:var(--bg);
   border-radius:8px;padding:5px 12px;cursor:pointer;color:var(--ink)}
-ul{list-style:none;margin:0;padding:0 16px 6px}
-li{padding:10px 2px;border-bottom:1px solid #ddd;font-size:14px;font-weight:700}
+ul{list-style:none;margin:0;padding:0 16px 4px}
+/* みた映画の時系列と同じ行: サムネ＋太字タイトル＋年・場所など。押すと詳しいページ */
+li{border-bottom:1px solid var(--ink)}
 li:last-child{border-bottom:0}
-li small{color:var(--sub);font-weight:500;margin-left:7px;font-size:12px}
+li a{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:center;padding:8px 0;
+     color:var(--ink);text-decoration:none}
+li a:hover b{text-decoration:underline;text-decoration-thickness:3px}
+li img,li i{width:44px;height:66px;object-fit:cover;border-radius:3px;display:block;background:#eee}
+li b{display:block;font-size:17px;font-weight:900;letter-spacing:-.02em;line-height:1.35}
+li span{display:block;font-size:13px;font-weight:700;margin-top:2px}
+li em{font-style:normal;font-size:11px;font-weight:800;color:var(--acc);border:2px solid var(--acc);
+      border-radius:6px;padding:0 5px;margin-right:6px}
 .empty{color:var(--sub);font-size:14px;padding:30px 4px;line-height:1.8}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);
   color:#fff;font-size:13px;font-weight:800;border-radius:999px;padding:10px 20px;
@@ -72,6 +80,19 @@ const verdictOf = (slug, id) =>
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => (
   {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
+// 小さい枠なので AniList は軽い medium 画像に
+const sm = u => u.replace('/cover/large/', '/cover/medium/');
+// 詳しいページ（本体の detailUrl と同じ振り分け）
+function detailUrl(slug, it) {
+  let m;
+  if (it.url) return it.url;
+  if ((m = /^a(\d+)$/.exec(it.id))) return 'https://anilist.co/anime/' + m[1];
+  if (slug == 'manga1000' && (m = /^m(\d+)$/.exec(it.id))) return 'https://anilist.co/manga/' + m[1];
+  if ((m = /^tm(\d+)$/.exec(it.id))) return 'https://www.themoviedb.org/movie/' + m[1];
+  if (slug == 'sauna100') return 'https://sauna-ikitai.com/search?keyword=' + encodeURIComponent(it.t);
+  return 'https://ja.wikipedia.org/wiki/Special:Search?search=' + encodeURIComponent(it.wiki || it.t);
+}
+
 const groups = QUEST.packs.map(p => ({
   p, items: p.items.filter(it => verdictOf(p.slug, it.id) === 'want')
 })).filter(g => g.items.length);
@@ -82,7 +103,9 @@ document.getElementById('cats').innerHTML = groups.length ? groups.map((g, i) =>
   <details${i === 0 ? ' open' : ''} data-slug="${esc(g.p.slug)}">
     <summary>${g.p.icon} ${esc(g.p.name)}<span class="n">${g.items.length}件</span>
       <button class="copy" type="button">コピー</button><span class="chev">›</span></summary>
-    <ul>${g.items.map(it => `<li>${esc(it.t)}${it.s ? `<small>${esc(String(it.s))}</small>` : ''}</li>`).join('')}</ul>
+    <ul>${g.items.map(it => `<li><a href="${esc(detailUrl(g.p.slug, it))}" target="_blank" rel="noopener">${
+      it.img ? `<img src="${esc(sm(it.img))}" loading="lazy" alt="">` : '<i></i>'}<div><b>${esc(it.t)}</b><span>${
+      it.genre ? `<em>${esc(it.genre)}</em>` : ''}${esc(String(it.s || ''))}</span></div></a></li>`).join('')}</ul>
   </details>`).join('')
   : '<p class="empty">まだ💛が付いていません。トップのパックでスワイプ（上方向）すると、ここに人生のやりたいことが並びます。</p>';
 
