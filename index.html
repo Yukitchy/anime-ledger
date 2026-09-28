@@ -89,7 +89,7 @@ footer .nw{white-space:nowrap}
  .mm{display:grid;width:58px;height:58px;font-size:36px;flex:none}
  .sw{flex:1;margin:0;height:58px}.sw a{padding:0 8px;font-size:19px}
  .mhero{display:flex;flex-direction:column;position:relative;height:calc(100svh - 176px - env(safe-area-inset-bottom));min-height:420px}
- .want .pg{flex:1;min-height:0;grid-template-rows:repeat(3,minmax(0,1fr))}.want .pg img{height:100%;min-height:0;aspect-ratio:auto}
+ .want .mhero{container-type:size;min-width:0}.want .pg{flex:1;min-height:0;min-width:0;grid-template-rows:repeat(3,minmax(0,1fr));grid-template-columns:none;grid-auto-flow:column dense;grid-auto-columns:calc((100cqh - 10px) / 3 * 2 / 3);overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none}.want .pg::-webkit-scrollbar{display:none}.want .pg img{height:100%;min-height:0;aspect-ratio:auto}
  .mhero .go{flex:none}
  .pg{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}.pg img,.pg .ph{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:5px;display:block}
  .pg>:first-child{grid-column:span 2;grid-row:span 2}
@@ -321,7 +321,8 @@ function drawDone() {
 function drawWant() {
   const p = PACKS[cur], s = stat(p);
   // 開くたびに全部バラバラ: 左上の大1＋右2＋下の段3の6枚
-  $('MH').innerHTML = `<div class="pg">${shuffle(wantPool(p)).slice(0, 6).map(it => img(it.img, `q:${p.slug}:${it.id}`, false)).join('')}</div>` +
+  // 開くたびに全部バラバラ: 左上の大1枚のあとは同じ大きさの3段が右へ続く（指で横に送れる・ゆっくり自動で流れる）
+  $('MH').innerHTML = `<div class="pg">${shuffle(wantPool(p)).slice(0, 60).map((it, i) => img(it.img, `q:${p.slug}:${it.id}`, i > 8)).join('')}</div>` +
     (s.left ? `<button class="go" data-slug="${esc(p.slug)}">まとめて判定する</button>` : '');
   $('BN').innerHTML = PACKS.map((p, i) => `<button class="${i == cur ? 'on' : ''}" data-i="${i}">${esc(short(p.name))}</button>`).join('');
 }
@@ -339,6 +340,15 @@ const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { cons
 // やりたい側に出すのは「まだ」の分だけ。やりたいと言ったものを先に、残りは未判定・観てない
 const wantPool = p => { const left = p.items.filter(it => it.img && verdictOf(p.slug, it.id) !== 'done');
   return [...shuffle(left.filter(it => verdictOf(p.slug, it.id) === 'want')), ...shuffle(left.filter(it => verdictOf(p.slug, it.id) !== 'want'))]; };
+// スマホの作品グリッド: ゆーっくり右から左へ送る。触ったら4秒止まる。端まで行ったら止まる。動きを減らす設定なら流さない
+(() => { let pos = null, el = null, hold = 0, t0 = 0; const still = matchMedia('(prefers-reduced-motion: reduce)');
+  ['pointerdown', 'touchstart', 'wheel'].forEach(ev => addEventListener(ev, e => { if (e.target.closest && e.target.closest('.mhero .pg')) { hold = performance.now() + 4000; pos = null; } }, { passive: true }));
+  const tick = t => { const dt = Math.min(t - t0, 50); t0 = t; const g = mode == 'want' && document.querySelector('.mhero .pg');
+    if (g !== el) { el = g; pos = null; }
+    if (g && g.offsetParent && !still.matches && t > hold && g.scrollWidth > g.clientWidth) {
+      if (pos === null) pos = g.scrollLeft; pos = Math.min(pos + dt * 0.008, g.scrollWidth - g.clientWidth); g.scrollLeft = pos; }
+    requestAnimationFrame(tick); };
+  requestAnimationFrame(tick); })();
 const redraw = () => { if (mode == 'want') { drawToc(); drawWant(); } else drawDone(); };
 
 if (mode == 'want') {
