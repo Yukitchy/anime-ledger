@@ -311,7 +311,7 @@ function drawDone() {
 function drawWant() {
   const p = PACKS[cur], s = stat(p);
   $('MC').textContent = `${s.done} / ${s.total}`;
-  $('MH').innerHTML = `<div class="pg">${shuffle(p.items.filter(it => it.img)).slice(0, 12).map(it => img(it.img, `q:${p.slug}:${it.id}`, false)).join('')}</div>` +
+  $('MH').innerHTML = `<div class="pg">${wantPool(p).slice(0, 12).map(it => img(it.img, `q:${p.slug}:${it.id}`, false)).join('')}</div>` +
     (s.left ? `<button class="go" data-slug="${esc(p.slug)}">まとめて判定する</button>` : '');
   $('BN').innerHTML = PACKS.map((p, i) => `<button class="${i == cur ? 'on' : ''}" data-i="${i}">${esc(short(p.name))}</button>`).join('');
 }
@@ -320,12 +320,15 @@ function drawWant() {
 function drawToc() {
   const f = PACKS[0], fs = stat(f);
   $('C').innerHTML = `<span class=nb>あと${fs.total - fs.done}本で</span><span class=nb>${esc(f.name)}を</span><span class=nb>制覇</span>`;
-  $('L').innerHTML = PACKS.map((p, i) => { const it = p.items.find(x => x.img) || {};
+  $('L').innerHTML = PACKS.map((p, i) => { const it = wantPool(p)[0] || p.items.find(x => x.img) || {};
     return `<div class="it" role="button" tabindex="0" data-slug="${esc(p.slug)}" title="押すと判定をはじめる">${img(it.img, '', false)}<b>${esc(p.name)}</b><em class="${i ? '' : 'hi'}">${stat(p).pct}%</em></div>`; }).join('') +
     `<p class="hint">行を押すとスワイプ判定がはじまります。ポスターを押すと1つずつ判定できます。</p>`;
 }
 // 開くたびに違うポスターが先頭に来るように混ぜる
 const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
+// やりたい側に出すのは「まだ」の分だけ。やりたいと言ったものを先に、残りは未判定・観てない
+const wantPool = p => { const left = p.items.filter(it => it.img && verdictOf(p.slug, it.id) !== 'done');
+  return [...shuffle(left.filter(it => verdictOf(p.slug, it.id) === 'want')), ...shuffle(left.filter(it => verdictOf(p.slug, it.id) !== 'want'))]; };
 const redraw = () => { if (mode == 'want') { drawToc(); drawWant(); } else drawDone(); };
 
 if (mode == 'want') {
@@ -333,7 +336,7 @@ if (mode == 'want') {
   // 表紙: ポスターが左→右へゆっくり流れ続ける帯（マウスを乗せると止まる・ドラッグ可）
   const f = PACKS[0], A = $('A');
   A.classList.add('railon');
-  const ps = shuffle(f.items.filter(it => it.img)).slice(0, 40).map(it => img(it.img, `q:${f.slug}:${it.id}`, false)).join('');
+  const ps = shuffle(wantPool(f).slice(0, 80)).slice(0, 40).map(it => img(it.img, `q:${f.slug}:${it.id}`, false)).join('');
   A.innerHTML = `<div class="rail" id="RL">${ps}${ps}</div>`;
   const rl = $('RL'), still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let pos = 0, half = 0, hold = false, t0 = 0, drag = null;
@@ -350,7 +353,7 @@ if (mode == 'want') {
   rl.addEventListener('pointerup', up); rl.addEventListener('pointercancel', up);
 
   // 題字の下の小さい帯: 全クエストから3枚ずつ。自動では流さない
-  const t = PACKS.flatMap(p => p.items.filter(it => it.img).slice(0, 3).map(it => img(it.img, `q:${p.slug}:${it.id}`, false))).join('');
+  const t = PACKS.flatMap(p => wantPool(p).slice(0, 3).map(it => img(it.img, `q:${p.slug}:${it.id}`, false))).join('');
   $('HD').insertAdjacentHTML('beforeend', `<div class="mqw" id="MW"><div class="mq mqd" id="MQ"><div>${t}</div></div><button class="arw al" data-d="-1" aria-label="左へ送る">‹</button><button class="arw ar" data-d="1" aria-label="右へ送る">›</button></div>`);
   const mq = $('MQ'), MW = $('MW'); let dg = null;
   mq.addEventListener('pointerdown', e => { dg = { x: e.clientX, l: mq.scrollLeft }; mq.classList.add('drag'); mq.setPointerCapture(e.pointerId); });
