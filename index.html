@@ -76,16 +76,15 @@ footer summary{cursor:pointer;font-weight:900;font-size:13px;list-style:none}foo
 footer summary::after{content:' ＋'}footer details[open] summary::after{content:' −'}footer details[open] summary{margin-bottom:6px}
 footer .nw{white-space:nowrap}
 
-.mm,.mhero,.bnav,.mc{display:none}
+.mm,.mhero,.bnav{display:none}
 @media(max-width:900px){
  .wrap{grid-template-columns:1fr;grid-template-rows:none;grid-template-areas:"sw" "mh" "toc";padding:14px 16px 24px}
  .hd,.art,.cap{display:none!important}
  .want .toc{display:none}.done .mhero{display:none!important}
  .toc h2,.toc .chips{display:none}
- .swrow{position:-webkit-sticky;position:sticky;top:0;z-index:40;background:#fff;display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;margin:-14px -16px 12px;padding:12px 16px 8px;border-bottom:2px solid var(--ink)}
+ .swrow{position:-webkit-sticky;position:sticky;top:0;z-index:40;background:#fff;display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;margin:-14px -16px 12px;padding:12px 16px 8px}
  .mm{display:grid;width:58px;height:58px;font-size:36px;flex:none}
  .sw{flex:1;margin:0;height:58px}.sw a{padding:0 8px;font-size:19px}
- .mc{display:block;width:100%;text-align:right;font-size:14px;font-weight:900;letter-spacing:-.01em}
  .mhero{display:block;position:relative}
  .pg{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}.pg img,.pg .ph{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:5px;display:block}
  .pg>:first-child{grid-column:span 2;grid-row:span 2}
@@ -154,7 +153,7 @@ footer .nw{white-space:nowrap}
 <body>
 <div class="wrap">
 <div class="hd" id="HD"><div class="mark">制</div><div><h1 class="t">制覇帳</h1><div class="tg">やりたいこと・やったことリスト</div></div></div>
-<div class="swrow"><div class="mark mm">制</div><nav class="sw" id="S"></nav><div class="mc" id="MC"></div></div>
+<div class="swrow"><div class="mark mm">制</div><nav class="sw" id="S"></nav></div>
 <div class="art" id="A"></div><p class="cap" id="C"></p>
 <div class="mhero" id="MH"></div>
 <div class="toc"><h2 id="T"></h2><input type="search" class="find" id="q" placeholder="作品名でしぼり込む" aria-label="作品名でしぼり込む"><div id="L"></div></div>
@@ -303,14 +302,12 @@ function tlHTML(i) {
 function drawDone() {
   const [h, n] = tlHTML(cur);
   const ch = TLC.map((c, i) => `<button class="${i == cur ? 'on' : ''}" data-i="${i}">${c}</button>`).join('');
-  $('MC').textContent = n + '件';
   $('L').innerHTML = `<div class="chips">${ch}</div>${h || '<p class="empty">みつかりませんでした。</p>'}`;
   $('BN').innerHTML = ch;
 }
 
 function drawWant() {
   const p = PACKS[cur], s = stat(p);
-  $('MC').textContent = `${s.done} / ${s.total}`;
   $('MH').innerHTML = `<div class="pg">${wantPool(p).slice(0, 12).map(it => img(it.img, `q:${p.slug}:${it.id}`, false)).join('')}</div>` +
     (s.left ? `<button class="go" data-slug="${esc(p.slug)}">まとめて判定する</button>` : '');
   $('BN').innerHTML = PACKS.map((p, i) => `<button class="${i == cur ? 'on' : ''}" data-i="${i}">${esc(short(p.name))}</button>`).join('');
