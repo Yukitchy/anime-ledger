@@ -8,7 +8,7 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="description" content="やりたいこと・やったことリスト。観た・行った・やったをスワイプで棚卸しする。">
 <meta property="og:title" content="あそび台帳"><meta property="og:description" content="やりたいこと・やったことリスト。観た・行った・やったをスワイプで棚卸しする。"><meta property="og:image" content="https://yukitchy.github.io/anime-ledger/apple-touch-icon.png"><meta property="og:url" content="https://yukitchy.github.io/anime-ledger/"><meta property="og:type" content="website"><meta name="twitter:card" content="summary">
-<link rel="icon" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://s4.anilist.co"><link rel="icon" href="favicon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
 /* あそび台帳 — 白・黒・黄の3色だけ。ヒラギノ900＋字詰め（見本: design-bank/refs/05-Projects/anime-ledger/v2/h-final.html） */
 :root{--bg:#fff;--ink:#111;--acc:#f81c1c;--on:#0830a0;--ont:#fff;--acct:#fff}
@@ -222,7 +222,7 @@ const WD = '日月火水木金土';
 // 作品シートの引き当て表。画像に data-k を付けて、押された画像からここを引く
 const IX = new Map();
 const img = (u, k, lazy = true) => u
-  ? `<img src="${esc(u)}" alt=""${k ? ` data-k="${esc(k)}"` : ''}${lazy ? ' loading="lazy"' : ''} onerror="this.remove()">`
+  ? `<img src="${esc(u)}" alt=""${k ? ` data-k="${esc(k)}"` : ''}${lazy ? ' loading="lazy"' : ''} decoding="async" onerror="this.src.includes('/cover/large/') ? this.src = this.src.replace('/cover/large/', '/cover/medium/') : this.remove()">`
   : '';
 
 // ═══════════════ クエスト（判定の重ね順: この端末 ＞ 取り込み済みDB・既存記録） ═══════════════
@@ -323,8 +323,10 @@ function drawWant() {
   const p = PACKS[cur], s = stat(p);
   // 開くたびに全部バラバラ: 左上の大1＋右2＋下の段3の6枚
   // 開くたびに全部バラバラ: 左上の大1枚のあとは同じ大きさの3段が右へ続く（指で横に送れる・ゆっくり自動で流れる）
-  $('MH').innerHTML = `<div class="pg">${shuffle(wantPool(p)).slice(0, 60).map((it, i) => img(it.img, `q:${p.slug}:${it.id}`, i > 8)).join('')}</div>` +
-    (s.left ? `<button class="go" data-slug="${esc(p.slug)}">まとめて判定する</button>` : '');
+  // 小さい枠は軽い medium 画像（大は1枚目だけ large）。全部すぐ読み始め、見えている9枚を先に
+  const sm = u => (u || '').replace('/cover/large/', '/cover/medium/');
+  $('MH').innerHTML = `<div class="pg">${shuffle(wantPool(p)).slice(0, 60).map((it, i) => img(i ? sm(it.img) : it.img, `q:${p.slug}:${it.id}`, false).replace('<img ', i > 8 ? '<img fetchpriority="low" ' : '<img fetchpriority="high" ')).join('')}</div>` +
+    (s.done < s.total ? `<button class="go" data-slug="${esc(p.slug)}">まとめて判定する</button>` : '');
   $('BN').innerHTML = PACKS.map((p, i) => `<button class="${i == cur ? 'on' : ''}" data-i="${i}">${esc(short(p.name))}</button>`).join('');
 }
 
@@ -518,7 +520,9 @@ const sw = $('swipe'), stage = $('sw-stage');
 let deck = [], deckPack = null, undo = [];
 function openSwipe(slug) {
   deckPack = PACKS.find(p => p.slug === slug);
+  // 未判定が尽きたパック（アニメ等）は「やりたい」に残っている分を見直す
   deck = deckPack.items.filter(it => !verdictOf(slug, it.id));
+  if (!deck.length) deck = shuffle(deckPack.items.filter(it => verdictOf(slug, it.id) !== 'done'));
   undo = [];
   $('sw-name').textContent = deckPack.name;
   const V = verbsOf(slug);
