@@ -59,6 +59,8 @@ img.mark{background:none;object-fit:contain;border-radius:0}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 4px}
 .chips button,.bnav button{border:2px solid var(--ink);background:var(--bg);color:var(--ink);border-radius:10px;padding:7px 14px;font:900 15px/1.2 "Hiragino Sans","Noto Sans JP",sans-serif;cursor:pointer}
 .chips button.on,.bnav button.on{background:var(--on);color:var(--ont);border-color:var(--on)}
+.chips.sf{margin:4px 0 8px}.chips.sf button{padding:5px 10px;font-size:14px}.chips.sf b{align-self:center;font-size:14px;margin-right:2px}
+.tx .st{display:block;color:var(--acc);font-size:14px;letter-spacing:1px}
 .find{display:block;width:100%;margin:12px 0 0;border:2px solid var(--ink);border-radius:10px;padding:10px 14px;font:800 15px/1.2 "Hiragino Sans","Noto Sans JP",sans-serif;color:var(--ink);background:var(--bg);-webkit-appearance:none;appearance:none}
 .find:focus{outline:3px solid var(--acc);outline-offset:0}
 .want .find{display:none}
@@ -95,7 +97,7 @@ footer .nw{white-space:nowrap}
  .wrap{grid-template-columns:1fr;grid-template-rows:none;grid-template-areas:"sw" "mh" "toc";padding:14px 16px 24px}
  .hd,.art,.cap{display:none!important}
  .want .toc{display:none}.done .mhero{display:none!important}
- .toc h2,.toc .chips{display:none}
+ .toc h2,.toc .chips:not(.sf){display:none}
  .swrow{position:-webkit-sticky;position:sticky;top:0;z-index:40;background:var(--bg);display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;margin:-14px -16px 12px;padding:12px 16px 8px}
  .mm{display:grid;width:58px;height:58px;font-size:36px;flex:none}
  .sw{flex:1;margin:0;height:58px}.sw a{padding:0 8px;font-size:19px}
@@ -283,18 +285,31 @@ const TL_PACKS = { 4: ['manga1000'], 5: ['tokyo-spots', 'prefectures', 'heritage
 const tlItems = i => { const m = MOVIES.map(x => ({...x, c: '映画'})), s = SAUNA.map(x => ({...x, c: 'サウナ'}));
   return i == 0 ? [...m, ...s].filter(x => x.date) : i == 1 ? m : s; };
 
+const STARS_KEY = 'anime-ledger-stars-v1';
+const stars = ls.get(STARS_KEY, {});
+// 星はクエスト判定と同じDB(GAS)にも pack='stars'・verdict='s4' の形で預ける（数字だけだとシートが数値にして0が消える）。重ね順: この端末 ＞ DB ＞ 台帳の点数
+const starDB = () => QUEST.base.stars || {};
+// 作品の鍵が変わった時の引っ越し（バイオハザード: 別作品のAniList鍵 a3446 → 実写の題名鍵 2026-10-25）
+const STAR_MOVED = { a3446: 'tバイオハザド' };
+for (const [from, to] of Object.entries(STAR_MOVED))
+  if (stars[from] != null && stars[to] == null) { stars[to] = stars[from]; delete stars[from]; ls.set(STARS_KEY, stars); }
+const starsOf = m => stars[m.key] != null ? stars[m.key] : starDB()[m.key] != null ? +String(starDB()[m.key]).slice(1) : (m.score != null ? Math.round(m.score / 2) : 0);
 // ═══════════════ 画面 ═══════════════
 $('S').innerHTML = `<a href="?mode=want" class="${mode == 'want' ? 'on' : ''}">やりたい</a><a href="?mode=done" class="${mode == 'done' ? 'on' : ''}">やった</a>`;
 const q = $('q');
 let cur = 0;
+let sf = '';   // 星で絞る: '' すべて / '1'〜'5' / '0' 未評価（星が付くのは映画・サウナ・アニメだけ）
+const starSpan = m => { const n = starsOf(m); return n ? `<span class="st">${'★'.repeat(n)}</span>` : ''; };
+const starItems = i => i == 3 ? ANIME : i < 3 ? tlItems(i) : [];
 
 // 時系列の行の画像。無い・読めない時も列がずれないように場所だけ残す
 const rimg = (u, k) => u ? img(u, k).replace('this.remove()', "this.style.visibility='hidden'") : '<span></span>';
 function tlHTML(i) {
   const needle = q.value.trim().toLowerCase();
-  const hit = x => !needle || (x.title + ' ' + (x.english || '')).toLowerCase().includes(needle);
+  const hit = x => (!needle || (x.title + ' ' + (x.english || '')).toLowerCase().includes(needle)) && (sf === '' || starsOf(x) === +sf);
   let h = '', g0, m0, n = 0;
   if (TL_PACKS[i]) {
+    if (sf !== '') return ['', 0];
     for (const p of PACKS.filter(p => TL_PACKS[i].includes(p.slug))) {
       const done = p.items.filter(it => verdictOf(p.slug, it.id) === 'done' && hit({ title: it.t }));
       if (!done.length) continue;
@@ -307,7 +322,7 @@ function tlHTML(i) {
   if (i == 3) {
     for (const a of ANIME) { if (!hit(a)) continue; n++;   // ANIMEは放送年の新しい順で届く
       const g = a.year ? a.year + '' : '年不明'; if (g !== g0) { h += `<h3 class="yy">${g}</h3>`; g0 = g; }
-      h += `<div class="tr" data-k="${esc('n:' + a.key)}"><div class="dt"><span>${esc(a.kind || '')}</span></div>${rimg(a.cover, 'n:' + a.key)}<div class="tx"><b>${esc(a.title)}</b></div></div>`; }
+      h += `<div class="tr" data-k="${esc('n:' + a.key)}"><div class="dt"><span>${esc(a.kind || '')}</span></div>${rimg(a.cover, 'n:' + a.key)}<div class="tx"><b>${esc(a.title)}</b>${starSpan(a)}</div></div>`; }
     return [h, n];
   }
   for (const x of tlItems(i).filter(hit).sort((a, b) => (b.date || '').localeCompare(a.date || ''))) { n++;
@@ -317,7 +332,7 @@ function tlHTML(i) {
     const dd = x.date ? new Date(x.date + 'T00:00') : null;
     const times = x.times > 1 ? x.times + '回目' : x.visits > 1 ? '通算' + x.visits + '回' : '';
     h += `<div class="tr" data-k="${esc((x.c == '映画' ? 'm:' : 's:') + x.key)}"><div class="dt">${dd ? `<b>${dd.getDate()}</b><span>${g == 'これから' ? (dd.getMonth() + 1) + '月 ' : ''}${WD[dd.getDay()]}</span>` : ''}</div>` +
-         `${rimg(x.cover, (x.c == '映画' ? 'm:' : 's:') + x.key)}<div class="tx"><b>${esc(x.title)}</b><span>${esc([x.theater, i == 0 ? x.c : '', times].filter(Boolean).join(' · '))}</span></div></div>`;
+         `${rimg(x.cover, (x.c == '映画' ? 'm:' : 's:') + x.key)}<div class="tx"><b>${esc(x.title)}</b><span>${esc([x.theater, i == 0 ? x.c : '', times].filter(Boolean).join(' · '))}</span>${starSpan(x)}</div></div>`;
   }
   return [h, n];
 }
@@ -351,7 +366,10 @@ function statsHTML() {
 function drawDone() {
   const [h, n] = tlHTML(cur);
   const ch = TLC.map((c, i) => `<button class="${i == cur ? 'on' : ''}" data-i="${i}">${c}</button>`).join('');
-  $('L').innerHTML = `<div class="chips">${ch}</div>${h || '<p class="empty">みつかりませんでした。</p>'}${cur == 1 && !q.value.trim() ? statsHTML() : ''}`;
+  const cnt = {}; for (const m of starItems(cur)) { const n = starsOf(m); cnt[n] = (cnt[n] || 0) + 1; }
+  const SF = [['', 'すべて'], ['5', '★5'], ['4', '★4'], ['3', '★3'], ['2', '★2'], ['1', '★1'], ['0', '未評価']];
+  const empty = TL_PACKS[cur] && sf !== '' ? '星は映画・サウナ・アニメにだけ付きます。' : 'みつかりませんでした。';
+  $('L').innerHTML = `<div class="chips">${ch}</div><div class="chips sf"><b>星</b>${SF.map(([v, t]) => `<button data-s="${v}" class="${v === sf ? 'on' : ''}">${t}${v !== '' && cnt[v] ? ' ' + cnt[v] : ''}</button>`).join('')}</div>${h || `<p class="empty">${empty}</p>`}${cur == 1 && !q.value.trim() ? statsHTML() : ''}`;
   $('BN').innerHTML = ch;
 }
 
@@ -436,7 +454,9 @@ if (mode == 'want') {
   const r = MOVIES.filter(m => m.date && m.date <= TODAY && m.cover).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 4), x = r[0];
   $('A').innerHTML = r.map(m => img(m.cover, 'm:' + m.key, false)).join('');
   if (x) $('C').innerHTML = `${esc(x.title)}<small>${+x.date.slice(5, 7)}/${+x.date.slice(8)}${x.theater ? ' ・ ' + esc(x.theater) : ''}</small>`;
-  $('L').addEventListener('click', e => { const b = e.target.closest('.chips button'); if (b) { cur = +b.dataset.i; drawDone(); } });
+  $('L').addEventListener('click', e => { const b = e.target.closest('.chips button'); if (!b) return;
+    if (b.dataset.s != null) sf = b.dataset.s; else cur = +b.dataset.i;
+    drawDone(); });
   q.addEventListener('input', drawDone);
 }
 $('BN').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; cur = +b.dataset.i; redraw(); scrollTo({ top: 0, behavior: 'smooth' }); });
@@ -493,15 +513,6 @@ $('qnote').textContent = ownerKey()
   : '判定はこの端末の中にだけ保存されます（閲覧モード）。';
 
 // ═══════════════ 作品シート ═══════════════
-const STARS_KEY = 'anime-ledger-stars-v1';
-const stars = ls.get(STARS_KEY, {});
-// 星はクエスト判定と同じDB(GAS)にも pack='stars'・verdict='s4' の形で預ける（数字だけだとシートが数値にして0が消える）。重ね順: この端末 ＞ DB ＞ 台帳の点数
-const starDB = () => QUEST.base.stars || {};
-// 作品の鍵が変わった時の引っ越し（バイオハザード: 別作品のAniList鍵 a3446 → 実写の題名鍵 2026-10-25）
-const STAR_MOVED = { a3446: 'tバイオハザド' };
-for (const [from, to] of Object.entries(STAR_MOVED))
-  if (stars[from] != null && stars[to] == null) { stars[to] = stars[from]; delete stars[from]; ls.set(STARS_KEY, stars); }
-const starsOf = m => stars[m.key] != null ? stars[m.key] : starDB()[m.key] != null ? +String(starDB()[m.key]).slice(1) : (m.score != null ? Math.round(m.score / 2) : 0);
 const PS = $('PS'), SV = $('SV'), SS = $('SS');
 function openSheet(k) {
   const o = IX.get(k); if (!o) return;
@@ -545,7 +556,7 @@ function detailUrl(o) {
   if (o.q == '映画') return 'https://www.themoviedb.org/search?query=' + n;
   return 'https://ja.wikipedia.org/wiki/Special:Search?search=' + encodeURIComponent((o.it && o.it.wiki) || o.t);
 }
-const closeSheet = () => { PS.hidden = true; document.body.style.overflow = ''; };
+const closeSheet = () => { PS.hidden = true; document.body.style.overflow = ''; if (mode == 'done') drawDone(); };
 PS.addEventListener('click', e => { if (e.target === PS || e.target.closest('.shx')) closeSheet(); });
 addEventListener('keydown', e => { if (e.key == 'Escape' && !PS.hidden) closeSheet(); });
 // 帯（ドラッグで送る所）は、ほぼ動かさずに離した時だけ「押した」とみなす
