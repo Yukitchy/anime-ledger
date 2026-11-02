@@ -160,6 +160,7 @@ footer .nw{white-space:nowrap}
 .sw-card.top{cursor:grab}
 .sw-card.under{transform:scale(.94);opacity:.5}
 .sw-card.fly{transition:transform .25s ease,opacity .25s ease;opacity:0}
+.sw-nope{position:absolute;right:16px;bottom:calc(92px + env(safe-area-inset-bottom));border:2px solid var(--ink);background:var(--bg);border-radius:10px;padding:8px 14px;font:800 13px/1 "Hiragino Sans",sans-serif;cursor:pointer;color:var(--ink)}
 .sw-tag{position:absolute;top:14px;font-weight:900;font-size:20px;padding:4px 12px;border-radius:6px;border:3px solid var(--ink);background:var(--bg);color:var(--ink);opacity:0;pointer-events:none}
 .sw-tag.done{right:12px;background:var(--acc);transform:rotate(8deg)}
 .sw-tag.no{left:12px;transform:rotate(-8deg)}
@@ -245,6 +246,7 @@ footer .nw{white-space:nowrap}
     <button class="x" id="sw-close" aria-label="閉じる">✕</button></div>
   <div class="sw-stage" id="sw-stage"></div>
   <button class="sw-undo" id="sw-undo" hidden>← 1つ戻す</button>
+  <button class="sw-nope" id="sw-nope" data-v="nope" hidden>興味ない ✕</button>
   <div class="sw-btns">
     <button class="b-no" data-v="no"></button>
     <button class="b-skip" data-v="skip"></button>
@@ -300,6 +302,9 @@ const VERBS = {
 const PLACE_PACKS = new Set(['tokyo-spots', 'sauna100', 'attractions', 'heritage-jp', 'prefectures', 'eats100', 'my-words']);
 const VIDEO_PACKS = new Set(['anime1000', 'movies1000']);
 const verbsOf = slug => VERBS[slug] || {done:'やった', no:'やってない', want:'やりたい'};
+// 「観てない/読んでない」と「興味ない」を分けるパック（noが興味ない以外の物）。nope=興味ない＝どこにも出さない
+const hasNope = slug => verbsOf(realSlug(slug, '')).no !== '興味ない';
+const isHiddenV = (slug, v) => v === 'done' || v === 'nope' || (v === 'no' && !hasNope(slug));
 // 音楽イベント（ライブ・フェス・コンサート）は元のイベントパックから抜き出した「見せ方だけのパック」。
 // 判定は元のパック名で記録する（申込リマインドやDBがそのまま効くように）
 const MUSIC_SLUG = 'music-events', MUSIC_SRC = {};
@@ -470,12 +475,12 @@ function mixPool() {
   const seen = new Set(), uniq = a => a.filter(x => { const k = x.it.t; if (seen.has(k)) return false; seen.add(k); return true; });
   const v = x => verdictOf(x.p.slug, x.it.id);
   // イベント: まだ終わってない物。推し→やりたい→近い順
-  const ev = uniq(pick(PACKS.filter(p => EVENT_PACKS.has(p.slug)), (p, it) => (it.end || it.start) >= TODAY && verdictOf(p.slug, it.id) !== 'no')
+  const ev = uniq(pick(PACKS.filter(p => EVENT_PACKS.has(p.slug)), (p, it) => (it.end || it.start) >= TODAY && !['no', 'nope'].includes(verdictOf(p.slug, it.id)))
     .sort((a, b) => (isOshi(b.it) - isOshi(a.it)) || ((v(b) === 'want') - (v(a) === 'want')) || String(a.it.start).localeCompare(String(b.it.start)))).slice(0, 20);
   const rest = PACKS.filter(p => !MEDIA.has(p.slug) && !EVENT_PACKS.has(p.slug));
   const wantPl = uniq(shuffle(pick(rest, (p, it) => verdictOf(p.slug, it.id) === 'want'))).slice(0, 18);
   const newPl = uniq(shuffle(pick(rest, (p, it) => !verdictOf(p.slug, it.id)))).slice(0, 10);
-  const media = uniq(shuffle(pick(PACKS.filter(p => MEDIA.has(p.slug)), (p, it) => verdictOf(p.slug, it.id) === 'want'))).slice(0, 16);
+  const media = uniq(shuffle(pick(PACKS.filter(p => MEDIA.has(p.slug)), (p, it) => verdictOf(p.slug, it.id) === 'want'))).slice(0, 16);   // 観たい/読みたい
   // 先頭は一番近い推し/やりたいイベント。あとは種類が交互に来るように混ぜる
   const head = ev.length ? [ev.shift()] : [];
   const lanes = [shuffle(ev.slice(0, 12)).concat(ev.slice(12)), wantPl, newPl, media], out = [...head];
@@ -520,7 +525,7 @@ function drawToc() {
 // 開くたびに違うポスターが先頭に来るように混ぜる
 const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
 // やりたい側に出すのは「まだ」の分だけ。やりたいと言ったものを先に、残りは未判定・観てない
-const wantPool = p => { const left = p.items.filter(it => it.img && !['done', 'no'].includes(verdictOf(p.slug, it.id)));   // 興味ないと言った物は表紙にも出さない
+const wantPool = p => { const left = p.items.filter(it => it.img && !isHiddenV(p.slug, verdictOf(p.slug, it.id)));   // 興味ないと言った物は表紙にも出さない
   return [...shuffle(left.filter(it => verdictOf(p.slug, it.id) === 'want')), ...shuffle(left.filter(it => verdictOf(p.slug, it.id) !== 'want'))]; };
 // スマホの作品グリッド: ゆーっくり右から左へ送る。触ったら4秒止まる。端まで行ったら止まる。動きを減らす設定なら流さない
 (() => { let pos = null, el = null, hold = 0, t0 = 0; const still = matchMedia('(prefers-reduced-motion: reduce)');
@@ -706,8 +711,8 @@ function openSheet(k) {
   SV.hidden = !o.it; SS.hidden = !o.rec;
   if (o.it) {
     const V = verbsOf(o.slug), v = verdictOf(o.slug, o.it.id);
-    SV.innerHTML = ['done', 'want', 'skip', 'no'].filter(x => x != 'skip' || V.skip !== false)
-      .map(x => `<button data-v="${x}" class="${x == v ? 'on' : ''}">${x == 'skip' ? '途中' : V[x]}</button>`).join('');
+    SV.innerHTML = ['done', 'want', 'skip', 'no', 'nope'].filter(x => (x != 'skip' || V.skip !== false) && (x != 'nope' || hasNope(o.slug)))
+      .map(x => `<button data-v="${x}" class="${x == v ? 'on' : ''}">${x == 'skip' ? '途中' : x == 'nope' ? '興味ない' : V[x]}</button>`).join('');
     SV.onclick = e => { const b = e.target.closest('button'); if (!b) return;
       record(o.slug, o.it, b.dataset.v);
       SV.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); redraw(); };
@@ -776,6 +781,7 @@ function openSwipe(slug) {
   sw.querySelector('.b-skip').hidden = V.skip === false;
   sw.querySelector('.b-want').textContent = `↑ ${V.want}`;
   sw.querySelector('.b-done').textContent = `${V.done} →`;
+  $('sw-nope').hidden = !hasNope(slug);
   sw.hidden = false;
   document.body.style.overflow = 'hidden';
   dealCards();
@@ -817,7 +823,7 @@ function judge(verdict) {
   record(deckPack.slug, it, verdict);
   dealCards();
 }
-document.querySelectorAll('.sw-btns button').forEach(b => b.addEventListener('click', () => flyOut(b.dataset.v)));
+document.querySelectorAll('.sw-btns button, #sw-nope').forEach(b => b.addEventListener('click', () => flyOut(b.dataset.v)));
 $('sw-undo').addEventListener('click', () => {
   const last = undo.pop();
   if (!last) return;
@@ -835,10 +841,10 @@ function flyOut(verdict) {
   const el = stage.querySelector('.sw-card.top');
   if (verdict === 'skip' && verbsOf(deckPack.slug).skip === false) { dealCards(); return; }
   if (!el) { judge(verdict); return; }
-  const off = { done: [420, -30, 12], no: [-420, -30, -12], want: [0, -560, 0], skip: [0, 560, 0] }[verdict];
+  const off = { done: [420, -30, 12], no: [-420, -30, -12], want: [0, -560, 0], skip: [0, 560, 0], nope: [-380, 420, -24] }[verdict];
   el.classList.add('fly');
   el.style.transform = `translate(${off[0]}px,${off[1]}px) rotate(${off[2]}deg)`;
-  el.querySelector('.sw-tag.' + verdict).style.opacity = 1;
+  const tg = el.querySelector('.sw-tag.' + verdict); if (tg) tg.style.opacity = 1;
   setTimeout(() => judge(verdict), 180);
 }
 // キーボード（PCで開いた時）: 矢印キー=スワイプと同じ4方向 / Esc=閉じる
