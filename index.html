@@ -208,6 +208,10 @@ footer .nw{white-space:nowrap}
 .shc button.ok{background:#22a06b}
 .tx .cm{display:block;font-size:13px;font-weight:800;opacity:.75;margin-top:2px}
 .tx .cm::before{content:"💬 "}
+.sfw{margin:8px 0 6px}
+.sfb{border:2px solid var(--ink);background:var(--bg);color:var(--ink);border-radius:999px;padding:6px 14px;font:900 14px/1.2 "Hiragino Sans",sans-serif;cursor:pointer}
+.sfb.on{background:var(--on);color:var(--ont);border-color:var(--on)}
+.sfm{margin:8px 0 0}
 </style>
 </head>
 <body>
@@ -348,7 +352,7 @@ const starsOf = m => stars[m.key] != null ? stars[m.key] : starDB()[m.key] != nu
 $('S').innerHTML = `<a href="?mode=want" class="${mode == 'want' ? 'on' : ''}">やりたい</a><a href="?mode=done" class="${mode == 'done' ? 'on' : ''}">やった</a>`;
 const q = $('q');
 let cur = 0;
-let sf = '';   // 星で絞る: '' すべて / '1'〜'5' / '0' 未評価（星が付くのは映画・サウナ・アニメだけ）
+let sf = '', sfOpen = false;   // 星で絞る（ボタン1つ・押すと選択肢が開く）: '' すべて / '1'〜'5' / '0' 未評価（星が付くのは映画・サウナ・アニメだけ）
 const starSpan = m => { const n = starsOf(m); return n ? `<span class="st">${'★'.repeat(n)}</span>` : ''; };
 const starItems = i => i == 4 ? ANIME : i < 3 ? tlItems(i) : [];
 
@@ -427,7 +431,7 @@ function drawDone() {
   const cnt = {}; for (const m of starItems(cur)) { const n = starsOf(m); cnt[n] = (cnt[n] || 0) + 1; }
   const SF = [['', 'すべて'], ['5', '★5'], ['4', '★4'], ['3', '★3'], ['2', '★2'], ['1', '★1'], ['0', '未評価']];
   const empty = TL_PACKS[cur] && sf !== '' ? '星は映画・サウナ・アニメにだけ付きます。' : cur == 3 && !q.value.trim() ? 'まだ「行った」にしたイベントはありません。やりたい側のイベントを押して「行った」にすると、ここに日付順で入ります。' : 'みつかりませんでした。';
-  $('L').innerHTML = `<div class="chips">${ch}</div><div class="chips sf"><b>星</b>${SF.map(([v, t]) => `<button data-s="${v}" class="${v === sf ? 'on' : ''}">${t}${v !== '' && cnt[v] ? ' ' + cnt[v] : ''}</button>`).join('')}</div>${h || `<p class="empty">${empty}</p>`}${cur == 1 && !q.value.trim() ? statsHTML() : ''}${cur == 0 ? doneStrips() : ''}`;
+  $('L').innerHTML = `<div class="chips">${ch}</div><div class="sfw"><button class="sfb${sf !== '' ? ' on' : ''}" aria-expanded="${sfOpen}">星：${(SF.find(([v]) => v === sf) || SF[0])[1]} ${sfOpen ? '▴' : '▾'}</button>${sfOpen ? `<div class="chips sf sfm">${SF.map(([v, t]) => `<button data-s="${v}" class="${v === sf ? 'on' : ''}">${t}${v !== '' && cnt[v] ? ' ' + cnt[v] : ''}</button>`).join('')}</div>` : ''}</div>${h || `<p class="empty">${empty}</p>`}${cur == 1 && !q.value.trim() ? statsHTML() : ''}${cur == 0 ? doneStrips() : ''}`;
   $('BN').innerHTML = ch;
 }
 
@@ -554,8 +558,9 @@ if (mode == 'want') {
   $('A').innerHTML = r.map(m => img(m.cover, 'm:' + m.key, false)).join('');
   if (x) $('C').innerHTML = `${esc(x.title)}<small>${+x.date.slice(5, 7)}/${+x.date.slice(8)}${x.theater ? ' ・ ' + esc(x.theater) : ''}</small>`;
   $('L').addEventListener('click', e => { const mo = e.target.closest('.more'); if (mo) { cur = +mo.dataset.i; drawDone(); scrollTo({ top: 0, behavior: 'smooth' }); return; }
+    if (e.target.closest('.sfb')) { sfOpen = !sfOpen; drawDone(); return; }
     const b = e.target.closest('.chips button'); if (!b) return;
-    if (b.dataset.s != null) sf = b.dataset.s; else cur = +b.dataset.i;
+    if (b.dataset.s != null) { sf = b.dataset.s; sfOpen = false; } else cur = +b.dataset.i;
     drawDone(); });
   q.addEventListener('input', drawDone);
 }
