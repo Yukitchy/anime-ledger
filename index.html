@@ -189,10 +189,14 @@ footer .nw{white-space:nowrap}
 @media(max-width:860px){.oshi{padding:0 16px}}
 .pg figure{margin:0;position:relative;min-width:0;min-height:0}
 .pg figure img{width:100%;height:100%;aspect-ratio:auto;object-fit:cover;border-radius:5px;display:block}
-.pg figcaption{position:absolute;left:0;right:0;bottom:0;padding:18px 7px 6px;border-radius:0 0 5px 5px;background:linear-gradient(transparent,rgba(0,0,0,.78));color:#fff;font-size:11px;font-weight:900;line-height:1.25;pointer-events:none;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+.pg figcaption{position:absolute;left:0;right:0;bottom:0;padding:22px 7px 7px;border-radius:0 0 5px 5px;background:linear-gradient(transparent,rgba(0,0,0,.55) 30%,rgba(0,0,0,.85));color:#fff;font-size:11px;font-weight:900;line-height:1.3;pointer-events:none;display:flex;flex-direction:column;gap:2px}
+.pg figcaption .tg2{display:flex;flex-wrap:wrap;gap:3px}
+.pg figcaption .tg2 i{margin:0}
+.pg figcaption b{font-weight:900;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:normal;overflow-wrap:anywhere}
+.pg figcaption small{font-size:10px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pg figcaption i{display:inline-block;font-style:normal;background:var(--acc);color:var(--acct);border-radius:4px;padding:1px 5px;margin:0 4px 3px 0;font-size:10px}
 .pg figcaption i.o{background:#ffd400;color:#111}
-.pg>figure:first-child figcaption{font-size:15px;padding:30px 10px 10px}
+.pg>figure:first-child figcaption{font-size:16px;padding:40px 10px 10px;gap:4px}.pg>figure:first-child figcaption small{font-size:12px}
 .pg>figure:first-child figcaption i{font-size:12px}
 .shd{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 0}.shd span{border:2px solid currentColor;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:900}
 </style>
@@ -432,7 +436,7 @@ function mixTile(x, i) {
   const tag = ev ? `<i>${esc(md(it.start))}${it.end && it.end !== it.start ? '〜' + esc(md(it.end)) : ''}</i>` : `<i>${esc(short(p.name))}</i>`;
   const oshi = ev && isOshi(it) ? '<i class="o">★推し</i>' : want ? `<i class="o">${esc(verbsOf(p.slug).want)}</i>` : '';
   const where = ev ? String(it.s || '').replace(/・[^・]*$/, '').replace(/^.*?（(.+?)）.*$/, '$1') : '';
-  return `<figure>${img(src, k, false).replace('<img ', i > 8 ? '<img fetchpriority="low" ' : '<img fetchpriority="high" ')}<figcaption>${tag}${oshi}<br>${esc(it.t)}${where ? `<br><small>${esc(where)}</small>` : ''}</figcaption></figure>`;
+  return `<figure>${img(src, k, false).replace('<img ', i > 8 ? '<img fetchpriority="low" ' : '<img fetchpriority="high" ')}<figcaption><span class="tg2">${tag}${oshi}</span><b>${esc(ev ? String(it.t).replace(/[（(][^）)]*[）)]\s*$/, '').trim() : it.t)}</b>${where ? `<small>${esc(where)}</small>` : ''}</figcaption></figure>`;
 }
 
 function drawWant() {
