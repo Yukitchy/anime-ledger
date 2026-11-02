@@ -83,7 +83,7 @@ img.mark{background:none;object-fit:contain;border-radius:0}
 @media(max-width:900px){.rk{grid-template-columns:104px 1fr 30px}.yb{gap:5px}.yl{gap:5px}}
 .empty{font-size:15px;font-weight:800;padding:30px 0}
 
-.art img,.pg img,.tr img,.mqd img{cursor:pointer}
+.art img,.pg img,.tr img,.mqd img,.dstrip img{cursor:pointer}
 .ph{display:grid;place-items:center;background:var(--ink);color:#fff;font-weight:900;font-size:32px;border-radius:5px;aspect-ratio:2/3}
 
 footer{max-width:1400px;margin:40px auto 0;padding:18px 40px 40px;border-top:3px solid var(--ink);font-size:12px;font-weight:700;line-height:1.8}
@@ -199,6 +199,9 @@ footer .nw{white-space:nowrap}
 .pg>figure:first-child figcaption{font-size:16px;padding:40px 10px 10px;gap:4px}.pg>figure:first-child figcaption small{font-size:12px}
 .pg>figure:first-child figcaption i{font-size:12px}
 .shd{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 0}.shd span{border:2px solid currentColor;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:900}
+.sec .more{float:right;border:0;background:none;font:900 14px/1.6 inherit;color:var(--on);cursor:pointer}
+.dstrip{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:8px 0 4px}.dstrip::-webkit-scrollbar{display:none}
+.dstrip img{flex:none;width:84px;aspect-ratio:2/3;object-fit:cover;border-radius:5px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -309,12 +312,18 @@ for (const s of SAUNA) IX.set('s:' + s.key, { t: s.title, q: 'サウナ', rec: s
   m: [s.date && s.date.replace(/-/g, '/'), s.visits > 1 && '通算' + s.visits + '回'].filter(Boolean).join(' ・ ') });
 for (const a of ANIME) IX.set('n:' + a.key, { t: a.title, q: 'アニメ', rec: a, vid: 1,
   m: [a.year && a.year + '年', a.kind].filter(Boolean).join(' ・ ') });
-const TLC = ['すべて', '映画', 'サウナ', 'アニメ', '漫画', '場所'];
+const TLC = ['すべて', '映画', 'サウナ', 'イベント', 'アニメ', '漫画', '場所'];
 // 日付の記録が無いので、クエストのパックごとにまとめて並べる
-const TL_PACKS = { 4: ['manga1000'], 5: ['tokyo-spots', 'prefectures', 'heritage-jp', 'attractions', 'countries'] };
+const TL_PACKS = { 5: ['manga1000'], 6: ['tokyo-spots', 'prefectures', 'heritage-jp', 'attractions', 'countries', 'eats100', 'sauna100', 'bucket100'] };
 // 映画とアニメで同じAniList IDの鍵が出るので、引き当て表では m:/s:/n: を頭に付けて分ける
-const tlItems = i => { const m = MOVIES.map(x => ({...x, c: '映画'})), s = SAUNA.map(x => ({...x, c: 'サウナ'}));
-  return i == 0 ? [...m, ...s].filter(x => x.date) : i == 1 ? m : s; };
+// 行ったイベント: イベント系パックで「行った」にした物。日付は開催初日
+const doneEvents = () => QUEST.packs.filter(p => p.slug === 'anime-events' || p.slug === 'events-2026').flatMap(p => p.items
+  .filter(it => ((local[p.slug] || {})[it.id] || (QUEST.base[p.slug] || {})[it.id]) === 'done')
+  .map(it => ({ key: it.id, k: `q:${p.slug}:${it.id}`, title: it.t, date: it.start, cover: it.img, c: 'イベント',
+               theater: (String(it.s || '').match(/（(.+?)）/) || [])[1] || '' })))
+  .filter((x, i, a) => a.findIndex(y => y.title === x.title) === i);
+const tlItems = i => { const m = MOVIES.map(x => ({...x, c: '映画', k: 'm:' + x.key})), s = SAUNA.map(x => ({...x, c: 'サウナ', k: 's:' + x.key}));
+  return i == 0 ? [...m, ...s, ...doneEvents()].filter(x => x.date) : i == 1 ? m : i == 3 ? doneEvents() : s; };
 
 const STARS_KEY = 'anime-ledger-stars-v1';
 const stars = ls.get(STARS_KEY, {});
@@ -331,7 +340,7 @@ const q = $('q');
 let cur = 0;
 let sf = '';   // 星で絞る: '' すべて / '1'〜'5' / '0' 未評価（星が付くのは映画・サウナ・アニメだけ）
 const starSpan = m => { const n = starsOf(m); return n ? `<span class="st">${'★'.repeat(n)}</span>` : ''; };
-const starItems = i => i == 3 ? ANIME : i < 3 ? tlItems(i) : [];
+const starItems = i => i == 4 ? ANIME : i < 3 ? tlItems(i) : [];
 
 // 時系列の行の画像。無い・読めない時も列がずれないように場所だけ残す
 const rimg = (u, k) => u ? img(u, k).replace('this.remove()', "this.style.visibility='hidden'") : '<span></span>';
@@ -350,7 +359,7 @@ function tlHTML(i) {
     }
     return [h, n];
   }
-  if (i == 3) {
+  if (i == 4) {
     for (const a of ANIME) { if (!hit(a)) continue; n++;   // ANIMEは放送年の新しい順で届く
       const g = a.year ? a.year + '' : '年不明'; if (g !== g0) { h += `<h3 class="yy">${g}</h3>`; g0 = g; }
       h += `<div class="tr" data-k="${esc('n:' + a.key)}"><div class="dt"><span>${esc(a.kind || '')}</span></div>${rimg(a.cover, 'n:' + a.key)}<div class="tx"><b>${esc(a.title)}</b>${starSpan(a)}</div></div>`; }
@@ -362,8 +371,8 @@ function tlHTML(i) {
     if (x.date && g != 'これから') { const mo = +x.date.slice(5, 7) + '月'; if (mo !== m0) { h += `<h4 class="mo">${mo}</h4>`; m0 = mo; } }
     const dd = x.date ? new Date(x.date + 'T00:00') : null;
     const times = x.times > 1 ? x.times + '回目' : x.visits > 1 ? '通算' + x.visits + '回' : '';
-    h += `<div class="tr" data-k="${esc((x.c == '映画' ? 'm:' : 's:') + x.key)}"><div class="dt">${dd ? `<b>${dd.getDate()}</b><span>${g == 'これから' ? (dd.getMonth() + 1) + '月 ' : ''}${WD[dd.getDay()]}</span>` : ''}</div>` +
-         `${rimg(x.cover, (x.c == '映画' ? 'm:' : 's:') + x.key)}<div class="tx"><b>${esc(x.title)}</b><span>${esc([x.theater, i == 0 ? x.c : '', times].filter(Boolean).join(' · '))}</span>${starSpan(x)}</div></div>`;
+    h += `<div class="tr" data-k="${esc(x.k)}"><div class="dt">${dd ? `<b>${dd.getDate()}</b><span>${g == 'これから' ? (dd.getMonth() + 1) + '月 ' : ''}${WD[dd.getDay()]}</span>` : ''}</div>` +
+         `${rimg(x.cover, x.k)}<div class="tx"><b>${esc(x.title)}</b><span>${esc([x.theater, i == 0 ? x.c : '', times].filter(Boolean).join(' · '))}</span>${starSpan(x)}</div></div>`;
   }
   return [h, n];
 }
@@ -394,13 +403,21 @@ function statsHTML() {
   return h + `<div class="dn"><div style="background:conic-gradient(${seg.join(',')})"><b><span>${(scored.reduce((t, m) => t + m.score, 0) / N).toFixed(1)}<small>平均</small></span></b></div><ul>` +
     [5, 4, 3, 2, 1].filter(i => d[i]).map(i => `<li><i style="background:${tone(i)}"></i>★${i}　${d[i]}本</li>`).join('') + '</ul></div>';
 }
+// すべての下: 日付の無い「観た・読んだ・行った」を種類ごとに表紙の帯で（押すとそのタブへ）
+function doneStrips() {
+  if (q.value.trim() || sf !== '') return '';
+  const qd = slugs => QUEST.packs.filter(p => slugs.includes(p.slug)).flatMap(p => p.items.filter(it => it.img && verdictOf(p.slug, it.id) === 'done').map(it => ({ k: `q:${p.slug}:${it.id}`, img: it.img })));
+  const rows = [[4, '観たアニメ', ANIME.filter(a => a.cover).map(a => ({ k: 'n:' + a.key, img: a.cover }))],
+                [5, '読んだ漫画', qd(TL_PACKS[5])], [6, '行った場所・食べたもの', qd(TL_PACKS[6])]];
+  return rows.filter(r => r[2].length).map(([i, t, a]) => `<h3 class="sec">${t}<button class="more" data-i="${i}">${a.length}件 ›</button></h3><div class="dstrip">${a.slice(0, 24).map(x => img((x.img || '').replace('/cover/large/', '/cover/medium/'), x.k, false)).join('')}</div>`).join('');
+}
 function drawDone() {
   const [h, n] = tlHTML(cur);
   const ch = TLC.map((c, i) => `<button class="${i == cur ? 'on' : ''}" data-i="${i}">${c}</button>`).join('');
   const cnt = {}; for (const m of starItems(cur)) { const n = starsOf(m); cnt[n] = (cnt[n] || 0) + 1; }
   const SF = [['', 'すべて'], ['5', '★5'], ['4', '★4'], ['3', '★3'], ['2', '★2'], ['1', '★1'], ['0', '未評価']];
-  const empty = TL_PACKS[cur] && sf !== '' ? '星は映画・サウナ・アニメにだけ付きます。' : 'みつかりませんでした。';
-  $('L').innerHTML = `<div class="chips">${ch}</div><div class="chips sf"><b>星</b>${SF.map(([v, t]) => `<button data-s="${v}" class="${v === sf ? 'on' : ''}">${t}${v !== '' && cnt[v] ? ' ' + cnt[v] : ''}</button>`).join('')}</div>${h || `<p class="empty">${empty}</p>`}${cur == 1 && !q.value.trim() ? statsHTML() : ''}`;
+  const empty = TL_PACKS[cur] && sf !== '' ? '星は映画・サウナ・アニメにだけ付きます。' : cur == 3 && !q.value.trim() ? 'まだ「行った」にしたイベントはありません。やりたい側のイベントを押して「行った」にすると、ここに日付順で入ります。' : 'みつかりませんでした。';
+  $('L').innerHTML = `<div class="chips">${ch}</div><div class="chips sf"><b>星</b>${SF.map(([v, t]) => `<button data-s="${v}" class="${v === sf ? 'on' : ''}">${t}${v !== '' && cnt[v] ? ' ' + cnt[v] : ''}</button>`).join('')}</div>${h || `<p class="empty">${empty}</p>`}${cur == 1 && !q.value.trim() ? statsHTML() : ''}${cur == 0 ? doneStrips() : ''}`;
   $('BN').innerHTML = ch;
 }
 
@@ -526,7 +543,8 @@ if (mode == 'want') {
   const r = MOVIES.filter(m => m.date && m.date <= TODAY && m.cover).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 4), x = r[0];
   $('A').innerHTML = r.map(m => img(m.cover, 'm:' + m.key, false)).join('');
   if (x) $('C').innerHTML = `${esc(x.title)}<small>${+x.date.slice(5, 7)}/${+x.date.slice(8)}${x.theater ? ' ・ ' + esc(x.theater) : ''}</small>`;
-  $('L').addEventListener('click', e => { const b = e.target.closest('.chips button'); if (!b) return;
+  $('L').addEventListener('click', e => { const mo = e.target.closest('.more'); if (mo) { cur = +mo.dataset.i; drawDone(); scrollTo({ top: 0, behavior: 'smooth' }); return; }
+    const b = e.target.closest('.chips button'); if (!b) return;
     if (b.dataset.s != null) sf = b.dataset.s; else cur = +b.dataset.i;
     drawDone(); });
   q.addEventListener('input', drawDone);
