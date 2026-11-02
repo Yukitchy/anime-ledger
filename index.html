@@ -140,7 +140,7 @@ footer .nw{white-space:nowrap}
 .shl{display:block;text-align:center;border:2px solid var(--ink);color:var(--ink);text-decoration:none;border-radius:10px;padding:12px;font-size:15px;font-weight:900}.shl[hidden]{display:none}
 .sha{display:block;text-align:center;background:var(--on);color:var(--ont);text-decoration:none;border-radius:10px;padding:14px;font-size:16px;font-weight:900}
 @media(max-width:900px){.sh{place-items:end stretch;padding:0}.shp{grid-template-columns:120px 1fr;gap:14px;padding:18px 16px calc(18px + env(safe-area-inset-bottom));border-radius:16px 16px 0 0;width:100%}
- .shb h3{font-size:20px}.shv,.shs,.sha,.shl{grid-column:1/-1}.shp>.shb{display:contents}.shq,.shb h3,.shm{grid-column:2}.shp img{grid-row:span 3;align-self:start}}
+ .shb h3{font-size:20px}.shv,.shs,.shc,.sha,.shl{grid-column:1/-1}.shp>.shb{display:contents}.shq,.shb h3,.shm{grid-column:2}.shp img{grid-row:span 3;align-self:start}}
 
 /* スワイプ判定 */
 #swipe{position:fixed;inset:0;z-index:120;background:var(--bg);display:flex;flex-direction:column;touch-action:none}
@@ -202,6 +202,12 @@ footer .nw{white-space:nowrap}
 .sec .more{float:right;border:0;background:none;font:900 14px/1.6 inherit;color:var(--on);cursor:pointer}
 .dstrip{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:8px 0 4px}.dstrip::-webkit-scrollbar{display:none}
 .dstrip img{flex:none;width:84px;aspect-ratio:2/3;object-fit:cover;border-radius:5px;cursor:pointer}
+.shc{display:flex;gap:6px;align-items:stretch;margin-top:10px;width:100%}
+.shc textarea{flex:1;min-width:0;resize:none;border:2px solid var(--ink);border-radius:10px;padding:8px 10px;font:800 15px/1.4 "Hiragino Sans",sans-serif;background:var(--bg);color:var(--ink)}
+.shc button{flex:none;border:0;border-radius:10px;padding:0 16px;background:var(--on);color:var(--ont);font-size:15px;font-weight:900;cursor:pointer}
+.shc button.ok{background:#22a06b}
+.tx .cm{display:block;font-size:13px;font-weight:800;opacity:.75;margin-top:2px}
+.tx .cm::before{content:"💬 "}
 </style>
 </head>
 <body>
@@ -228,7 +234,7 @@ footer .nw{white-space:nowrap}
   <span class="nw">アニメ 879本</span> <span class="nw">映画 212本</span> <span class="nw">サウナ 12施設・のべ17回</span> <span class="nw">（アニメの申告は 1500本+）</span><br>アニメはPodcastでの言及、映画はチケットの購入記録、サウナは入館の記録が根拠です<br><span id="qnote"></span>
 </details></footer>
 
-<div class="sh" id="PS" hidden><div class="shp" role="dialog" aria-modal="true"><button class="shx" aria-label="閉じる">×</button><img id="SI" alt=""><div class="shb"><p class="shq" id="SQ"></p><h3 id="ST"></h3><p class="shm" id="SM"></p><div class="shv" id="SV"></div><div class="shs" id="SS" role="group" aria-label="評価"></div><a class="sha" id="SA" target="_blank" rel="noopener"></a><a class="shl" id="SL" target="_blank" rel="noopener">詳しく見る</a></div></div></div>
+<div class="sh" id="PS" hidden><div class="shp" role="dialog" aria-modal="true"><button class="shx" aria-label="閉じる">×</button><img id="SI" alt=""><div class="shb"><p class="shq" id="SQ"></p><h3 id="ST"></h3><p class="shm" id="SM"></p><div class="shv" id="SV"></div><div class="shs" id="SS" role="group" aria-label="評価"></div><div class="shc" id="SC"><textarea id="SCT" rows="2" maxlength="100" placeholder="ひとことコメント（100字まで）" aria-label="ひとことコメント"></textarea><button id="SCB">保存</button></div><a class="sha" id="SA" target="_blank" rel="noopener"></a><a class="shl" id="SL" target="_blank" rel="noopener">詳しく見る</a></div></div></div>
 
 <div id="swipe" hidden>
   <div class="sw-head"><b id="sw-name"></b><span class="left" id="sw-left"></span>
@@ -333,6 +339,10 @@ const starDB = () => QUEST.base.stars || {};
 const STAR_MOVED = { a3446: 'tバイオハザド' };
 for (const [from, to] of Object.entries(STAR_MOVED))
   if (stars[from] != null && stars[to] == null) { stars[to] = stars[from]; delete stars[from]; ls.set(STARS_KEY, stars); }
+const NOTES_KEY = 'anime-ledger-notes-v1';
+const notes = ls.get(NOTES_KEY, {}), NOTE_DB = {};
+const noteOf = k => notes[k] != null ? notes[k] : NOTE_DB[k] || '';
+const noteSpan = k => { const c = noteOf(k); return c ? `<span class="cm">${esc(c)}</span>` : ''; };
 const starsOf = m => stars[m.key] != null ? stars[m.key] : starDB()[m.key] != null ? +String(starDB()[m.key]).slice(1) : (m.score != null ? Math.round(m.score / 2) : 0);
 // ═══════════════ 画面 ═══════════════
 $('S').innerHTML = `<a href="?mode=want" class="${mode == 'want' ? 'on' : ''}">やりたい</a><a href="?mode=done" class="${mode == 'done' ? 'on' : ''}">やった</a>`;
@@ -355,14 +365,14 @@ function tlHTML(i) {
       if (!done.length) continue;
       if (TL_PACKS[i].length > 1) h += `<h3 class="yy">${esc(short(p.name))}</h3>`;
       for (const it of done) { n++; const k = `q:${p.slug}:${it.id}`;
-        h += `<div class="tr" data-k="${esc(k)}"><div class="dt"></div>${rimg(it.img, k)}<div class="tx"><b>${esc(it.t)}</b><span>${esc(it.s || '')}</span></div></div>`; }
+        h += `<div class="tr" data-k="${esc(k)}"><div class="dt"></div>${rimg(it.img, k)}<div class="tx"><b>${esc(it.t)}</b><span>${esc(it.s || '')}</span>${noteSpan(k)}</div></div>`; }
     }
     return [h, n];
   }
   if (i == 4) {
     for (const a of ANIME) { if (!hit(a)) continue; n++;   // ANIMEは放送年の新しい順で届く
       const g = a.year ? a.year + '' : '年不明'; if (g !== g0) { h += `<h3 class="yy">${g}</h3>`; g0 = g; }
-      h += `<div class="tr" data-k="${esc('n:' + a.key)}"><div class="dt"><span>${esc(a.kind || '')}</span></div>${rimg(a.cover, 'n:' + a.key)}<div class="tx"><b>${esc(a.title)}</b>${starSpan(a)}</div></div>`; }
+      h += `<div class="tr" data-k="${esc('n:' + a.key)}"><div class="dt"><span>${esc(a.kind || '')}</span></div>${rimg(a.cover, 'n:' + a.key)}<div class="tx"><b>${esc(a.title)}</b>${starSpan(a)}${noteSpan('n:' + a.key)}</div></div>`; }
     return [h, n];
   }
   for (const x of tlItems(i).filter(hit).sort((a, b) => (b.date || '').localeCompare(a.date || ''))) { n++;
@@ -372,7 +382,7 @@ function tlHTML(i) {
     const dd = x.date ? new Date(x.date + 'T00:00') : null;
     const times = x.times > 1 ? x.times + '回目' : x.visits > 1 ? '通算' + x.visits + '回' : '';
     h += `<div class="tr" data-k="${esc(x.k)}"><div class="dt">${dd ? `<b>${dd.getDate()}</b><span>${g == 'これから' ? (dd.getMonth() + 1) + '月 ' : ''}${WD[dd.getDay()]}</span>` : ''}</div>` +
-         `${rimg(x.cover, x.k)}<div class="tx"><b>${esc(x.title)}</b><span>${esc([x.theater, i == 0 ? x.c : '', times].filter(Boolean).join(' · '))}</span>${starSpan(x)}</div></div>`;
+         `${rimg(x.cover, x.k)}<div class="tx"><b>${esc(x.title)}</b><span>${esc([x.theater, i == 0 ? x.c : '', times].filter(Boolean).join(' · '))}</span>${starSpan(x)}${noteSpan(x.k)}</div></div>`;
   }
   return [h, n];
 }
@@ -591,11 +601,16 @@ flush();   // 前回の積み残しがあれば起動時に送る
 if (ownerKey()) {
   fetch(GAS_URL + '?token=' + ownerKey()).then(r => r.json()).then(d => {
     if (!d.ok) return;
-    for (const r of d.rows.sort((a, b) => String(a.ts).localeCompare(String(b.ts))))
+    for (const r of d.rows.sort((a, b) => String(a.ts).localeCompare(String(b.ts)))) {
+      if (r.pack === 'notes') { NOTE_DB[r.id] = String(r.title || ''); continue; }   // ひとことコメント: 最新の行が有効
       if (r.verdict) (QUEST.base[r.pack] = QUEST.base[r.pack] || {})[r.id] = r.verdict;
+    }
+    // 端末の控えのうちDBに届いた分は消す（DBと同じ中身になったもの）
+    for (const k of Object.keys(notes)) if (NOTE_DB[k] === notes[k]) delete notes[k];
+    ls.set(NOTES_KEY, notes);
     // 星: 端末にあってDBに無いものは送り上げる（Safariが端末の保存を消しても、DBから戻る）
     for (const [k, n] of Object.entries(stars)) if (starDB()[k] == null) queue('stars', k, k, 's' + n);
-    if (mode == 'want' && sw.hidden) redraw();
+    if (mode == 'want' && sw.hidden) redraw(); else if (mode == 'done' && PS.hidden) drawDone();
   }).catch(() => {});
 }
 // ═══════════════ 推しリスト: 判定DBに pack='oshi'・verdict='add'/'del' で預ける（巡回は月次のイベント更新） ═══════════════
@@ -648,6 +663,12 @@ $('qnote').textContent = ownerKey()
 const PS = $('PS'), SV = $('SV'), SS = $('SS');
 function openSheet(k) {
   const o = IX.get(k); if (!o) return;
+  const SCT = $('SCT'), SCB = $('SCB');
+  SCT.value = noteOf(k); SCB.textContent = '保存'; SCB.classList.remove('ok');
+  SCT.oninput = () => { SCB.textContent = '保存'; SCB.classList.remove('ok'); };
+  SCB.onclick = () => { const v = SCT.value.trim().slice(0, 100);
+    notes[k] = v; ls.set(NOTES_KEY, notes); queue('notes', k, v, 'c'); flush();
+    SCB.textContent = '保存した'; SCB.classList.add('ok'); };
   const src = o.it ? o.it.img : o.rec.cover;
   $('SI').src = src || ''; $('SI').hidden = !src;
   $('SQ').textContent = o.q; $('ST').textContent = o.t; $('SM').textContent = o.m || ''; $('SM').hidden = !o.m;
