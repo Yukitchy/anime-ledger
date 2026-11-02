@@ -294,26 +294,48 @@ const VERBS = {
   attractions: {done:'乗った', no:'乗ってない', want:'乗りたい'},
   'events-2026': {done:'行った', no:'興味ない', want:'行きたい'},
   'anime-events': {done:'行った', no:'興味ない', want:'行きたい'},
+  'music-events': {done:'行った', no:'興味ない', want:'行きたい'},
   eats100: {done:'食べた', no:'興味ない', want:'食べたい', skip:false},  // 食べ物に「途中」は無い
 };
 const PLACE_PACKS = new Set(['tokyo-spots', 'sauna100', 'attractions', 'heritage-jp', 'prefectures', 'eats100', 'my-words']);
 const VIDEO_PACKS = new Set(['anime1000', 'movies1000']);
 const verbsOf = slug => VERBS[slug] || {done:'やった', no:'やってない', want:'やりたい'};
-const verdictOf = (slug, id) => (local[slug] || {})[id] || (QUEST.base[slug] || {})[id] || '';
+// 音楽イベント（ライブ・フェス・コンサート）は元のイベントパックから抜き出した「見せ方だけのパック」。
+// 判定は元のパック名で記録する（申込リマインドやDBがそのまま効くように）
+const MUSIC_SLUG = 'music-events', MUSIC_SRC = {};
+const realSlug = (slug, id) => slug === MUSIC_SLUG ? (MUSIC_SRC[id] || slug) : slug;
+const verdictOf = (slug, id) => { slug = realSlug(slug, id); return (local[slug] || {})[id] || (QUEST.base[slug] || {})[id] || ''; };
 
 // 目次の並び: 見本と同じ順（アニメ・映画・漫画が先、イベントは最後）
 const ORDER = ['anime1000','movies1000','manga1000','prefectures','eats100','tokyo-spots','attractions',
-               'heritage-jp','sauna100','bucket100','countries','my-words','anime-events','events-2026'];
-const PACKS = [...QUEST.packs].sort((a, b) => (ORDER.indexOf(a.slug) + 1 || 99) - (ORDER.indexOf(b.slug) + 1 || 99));
+               'heritage-jp','sauna100','bucket100','countries','my-words','anime-events','music-events','events-2026'];
+// ジャンルが音楽系か、題名がライブ/コンサートの物（「ラブライブ」のコラボやコスプレフェス等は除く）
+const isMusic = it => /^(ライブ|ライブ・コンサート|音楽フェス・ライブ)$/.test(it.genre || '')
+  || (/(?<!ブ)ライブ|\bLIVE\b|コンサート|Concert|MUSIX|オーケストラ|Orchestra|リスアニ|COUNTDOWN JAPAN|THIS FES/i.test(it.t) && !/ラブライブ|カフェ|POP ?UP|ポップアップ/i.test(it.t));
+const MUSIC = { slug: MUSIC_SLUG, name: 'ライブ・フェス・コンサート', items: [] };
+const PACKS = (() => { const seen = new Set();
+  const ps = QUEST.packs.map(p => {
+    if (p.slug !== 'anime-events' && p.slug !== 'events-2026') return p;
+    const keep = [];
+    for (const it of p.items) {
+      if (!isMusic(it)) { keep.push(it); continue; }
+      if (seen.has(it.t)) continue; seen.add(it.t);   // 両方のパックにある同じライブは1つに
+      MUSIC_SRC[it.id] = p.slug; MUSIC.items.push(it);
+    }
+    return { ...p, items: keep };
+  });
+  MUSIC.items.sort((a, b) => String(a.start).localeCompare(String(b.start)));
+  if (MUSIC.items.length) ps.push(MUSIC);
+  return ps.sort((a, b) => (ORDER.indexOf(a.slug) + 1 || 99) - (ORDER.indexOf(b.slug) + 1 || 99)); })();
 const SHORT = {'アニメ人気1000':'アニメ','映画メジャー1000':'映画','漫画人気1000':'漫画','食べたいもの':'食べもの','行きたい場所（東京圏）':'場所',
   '遊園地アトラクション':'遊園地','日本の世界遺産':'世界遺産','サウナ名店':'サウナ','定番バケットリスト':'定番','前に自分で言ったもの':'自分の言葉',
-  'アニメ系イベント（東京圏）':'アニメイベント','今後のイベント（東京圏）':'イベント'};
+  'アニメ系イベント（東京圏）':'アニメイベント','今後のイベント（東京圏）':'イベント','ライブ・フェス・コンサート':'ライブ'};
 const short = n => SHORT[n] || n;
 const stat = p => { let done = 0, left = 0;
   for (const it of p.items) { const v = verdictOf(p.slug, it.id); if (v === 'done') done++; else if (!v) left++; }
   return { done, left, total: p.items.length, pct: Math.round(100 * done / p.items.length) }; };
 for (const p of PACKS) for (const it of p.items)
-  IX.set(`q:${p.slug}:${it.id}`, { t: it.t, q: p.name, m: it.s ? String(it.s) : '', slug: p.slug, it });
+  IX.set(`q:${p.slug}:${it.id}`, { t: it.t, q: p.name, m: it.s ? String(it.s) : '', slug: realSlug(p.slug, it.id), it });
 
 // ═══════════════ やった側の材料（アニメ・映画・サウナの記録） ═══════════════
 for (const m of MOVIES) IX.set('m:' + m.key, { t: m.title, q: '映画', rec: m, vid: 1,
@@ -327,8 +349,8 @@ const TLC = ['すべて', '映画', 'サウナ', 'イベント', 'アニメ', '�
 const TL_PACKS = { 5: ['manga1000'], 6: ['tokyo-spots', 'prefectures', 'heritage-jp', 'attractions', 'countries', 'eats100', 'sauna100', 'bucket100'] };
 // 映画とアニメで同じAniList IDの鍵が出るので、引き当て表では m:/s:/n: を頭に付けて分ける
 // 行ったイベント: イベント系パックで「行った」にした物。日付は開催初日
-const doneEvents = () => QUEST.packs.filter(p => p.slug === 'anime-events' || p.slug === 'events-2026').flatMap(p => p.items
-  .filter(it => ((local[p.slug] || {})[it.id] || (QUEST.base[p.slug] || {})[it.id]) === 'done')
+const doneEvents = () => PACKS.filter(p => p.slug === 'anime-events' || p.slug === 'events-2026' || p.slug === MUSIC_SLUG).flatMap(p => p.items
+  .filter(it => verdictOf(p.slug, it.id) === 'done')
   .map(it => ({ key: it.id, k: `q:${p.slug}:${it.id}`, title: it.t, date: it.start, cover: it.img, c: 'イベント',
                theater: (String(it.s || '').match(/（(.+?)）/) || [])[1] || '' })))
   .filter((x, i, a) => a.findIndex(y => y.title === x.title) === i);
@@ -439,7 +461,7 @@ function drawDone() {
 const MIX = { slug: 'mix', name: 'ぜんぶ', items: [] };
 const TABS = [MIX, ...PACKS];
 const MEDIA = new Set(['anime1000', 'movies1000', 'manga1000']);
-const EVENT_PACKS = new Set(['anime-events', 'events-2026']);
+const EVENT_PACKS = new Set(['anime-events', 'events-2026', MUSIC_SLUG]);
 const OSHI_NAMES = () => { try { return oshiAll().map(([, r]) => r.t); } catch (e) { return []; } };   // 推しリストの準備前に呼ばれても落ちない
 const isOshi = it => (it.oshi || []).length > 0 || OSHI_NAMES().some(n => n && String(it.t).includes(n));
 const md = d => d ? `${+d.slice(5, 7)}/${+d.slice(8, 10)}` : '';
@@ -498,7 +520,7 @@ function drawToc() {
 // 開くたびに違うポスターが先頭に来るように混ぜる
 const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
 // やりたい側に出すのは「まだ」の分だけ。やりたいと言ったものを先に、残りは未判定・観てない
-const wantPool = p => { const left = p.items.filter(it => it.img && verdictOf(p.slug, it.id) !== 'done');
+const wantPool = p => { const left = p.items.filter(it => it.img && !['done', 'no'].includes(verdictOf(p.slug, it.id)));   // 興味ないと言った物は表紙にも出さない
   return [...shuffle(left.filter(it => verdictOf(p.slug, it.id) === 'want')), ...shuffle(left.filter(it => verdictOf(p.slug, it.id) !== 'want'))]; };
 // スマホの作品グリッド: ゆーっくり右から左へ送る。触ったら4秒止まる。端まで行ったら止まる。動きを減らす設定なら流さない
 (() => { let pos = null, el = null, hold = 0, t0 = 0; const still = matchMedia('(prefers-reduced-motion: reduce)');
@@ -570,6 +592,7 @@ redraw();
 // ═══════════════ 送信箱: 即ローカル保存 → まとめてGASへ。失敗しても残って次に送る ═══════════════
 let flushTimer = null;
 function record(slug, it, verdict) {
+  slug = realSlug(slug, it.id);
   (local[slug] = local[slug] || {})[it.id] = verdict;
   ls.set(LOCAL_KEY, local);
   queue(slug, it.id, it.t, verdict);
@@ -743,7 +766,8 @@ function openSwipe(slug) {
   deckPack = PACKS.find(p => p.slug === slug);
   // 未判定が尽きたパック（アニメ等）は「やりたい」に残っている分を見直す
   deck = deckPack.items.filter(it => !verdictOf(slug, it.id));
-  if (!deck.length) deck = shuffle(deckPack.items.filter(it => verdictOf(slug, it.id) !== 'done'));
+  // 見直しに出すのは「やりたい」「途中」だけ。「興味ない/観てない」と答えた物は二度と出さない
+  if (!deck.length) deck = shuffle(deckPack.items.filter(it => ['want', 'skip'].includes(verdictOf(slug, it.id))));
   undo = [];
   $('sw-name').textContent = deckPack.name;
   const V = verbsOf(slug);
@@ -789,7 +813,7 @@ function dealCards() {
 function judge(verdict) {
   if (!deck.length) return;
   const it = deck.shift();
-  undo.push({ it, prevLocal: (local[deckPack.slug] || {})[it.id] });
+  undo.push({ it, prevLocal: (local[realSlug(deckPack.slug, it.id)] || {})[it.id] });
   record(deckPack.slug, it, verdict);
   dealCards();
 }
@@ -797,11 +821,12 @@ document.querySelectorAll('.sw-btns button').forEach(b => b.addEventListener('cl
 $('sw-undo').addEventListener('click', () => {
   const last = undo.pop();
   if (!last) return;
-  if (last.prevLocal) local[deckPack.slug][last.it.id] = last.prevLocal;
-  else delete (local[deckPack.slug] || {})[last.it.id];
+  const rs = realSlug(deckPack.slug, last.it.id);
+  if (last.prevLocal) local[rs][last.it.id] = last.prevLocal;
+  else delete (local[rs] || {})[last.it.id];
   ls.set(LOCAL_KEY, local);
   // 送信箱にまだ居れば取り消す（送信済みなら次の判定が上書きとして記録される）
-  const i = outbox.findIndex(r => r.pack === deckPack.slug && r.id === last.it.id);
+  const i = outbox.findIndex(r => r.pack === realSlug(deckPack.slug, last.it.id) && r.id === last.it.id);
   if (i >= 0) { outbox.splice(i, 1); ls.set(OUTBOX_KEY, outbox); }
   deck.unshift(last.it);
   dealCards();
