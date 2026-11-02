@@ -160,7 +160,6 @@ footer .nw{white-space:nowrap}
 .sw-card.top{cursor:grab}
 .sw-card.under{transform:scale(.94);opacity:.5}
 .sw-card.fly{transition:transform .25s ease,opacity .25s ease;opacity:0}
-.sw-nope{position:absolute;right:16px;bottom:calc(100px + env(safe-area-inset-bottom));border:2px solid var(--ink);background:var(--bg);border-radius:10px;padding:18px 18px;font:800 15px/1 "Hiragino Sans",sans-serif;cursor:pointer;color:var(--ink)}
 .sw-tag{position:absolute;top:14px;font-weight:900;font-size:20px;padding:4px 12px;border-radius:6px;border:3px solid var(--ink);background:var(--bg);color:var(--ink);opacity:0;pointer-events:none}
 .sw-tag.done{right:12px;background:var(--acc);transform:rotate(8deg)}
 .sw-tag.no{left:12px;transform:rotate(-8deg)}
@@ -170,10 +169,12 @@ footer .nw{white-space:nowrap}
 .sw-btns button{border:2px solid var(--ink);background:var(--bg);color:var(--ink);border-radius:10px;padding:14px 0;width:96px;cursor:pointer;font:900 15px/1.3 "Hiragino Sans",sans-serif}
 .sw-btns .b-done{background:var(--acc)}.sw-btns .b-want{background:var(--on);color:var(--ont)}
 .sw-btns button:active{transform:scale(.96)}
-.sw-undo{position:absolute;left:16px;bottom:calc(100px + env(safe-area-inset-bottom));border:2px solid var(--ink);background:var(--bg);border-radius:10px;padding:18px 18px;font:800 15px/1 "Hiragino Sans",sans-serif;cursor:pointer;color:var(--ink)}
+.sw-aux{padding-bottom:0}
+.sw-aux>span{width:96px;display:flex}.sw-aux.sw-btns button{width:100%;min-height:calc(2 * 1.3 * 15px + 32px);display:flex;align-items:center;justify-content:center;text-align:center}
+.sw-btns:not(.sw-aux){padding-top:8px}
 .sw-fin{text-align:center;font-size:15px;font-weight:800;line-height:2}
 .sw-fin b{font-size:22px;font-weight:900}
-@media(max-width:520px){.sw-btns button{width:23%}}
+@media(max-width:520px){.sw-btns button,.sw-aux>span{width:23%}}
 .oshi{max-width:1400px;margin:8px auto 0;padding:0 40px}
 .oshi>summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px;border:3px solid var(--ink);border-radius:12px;padding:10px 16px;font-size:18px;font-weight:900;letter-spacing:-.02em}
 .oshi>summary::-webkit-details-marker{display:none}
@@ -245,8 +246,10 @@ footer .nw{white-space:nowrap}
   <div class="sw-head"><b id="sw-name"></b><span class="left" id="sw-left"></span>
     <button class="x" id="sw-close" aria-label="閉じる">✕</button></div>
   <div class="sw-stage" id="sw-stage"></div>
-  <button class="sw-undo" id="sw-undo" hidden>← 1つ戻す</button>
-  <button class="sw-nope" id="sw-nope" data-v="nope" hidden>興味ない ✕</button>
+  <div class="sw-btns sw-aux">
+    <span><button id="sw-undo" hidden>← 1つ戻す</button></span><span></span><span></span>
+    <span><button id="sw-nope" data-v="nope" hidden>興味ない ✕</button></span>
+  </div>
   <div class="sw-btns">
     <button class="b-no" data-v="no"></button>
     <button class="b-skip" data-v="skip"></button>
@@ -823,7 +826,7 @@ function judge(verdict) {
   record(deckPack.slug, it, verdict);
   dealCards();
 }
-document.querySelectorAll('.sw-btns button, #sw-nope').forEach(b => b.addEventListener('click', () => flyOut(b.dataset.v)));
+document.querySelectorAll('.sw-btns:not(.sw-aux) button, #sw-nope').forEach(b => b.addEventListener('click', () => flyOut(b.dataset.v)));
 $('sw-undo').addEventListener('click', () => {
   const last = undo.pop();
   if (!last) return;
