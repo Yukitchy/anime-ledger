@@ -189,6 +189,14 @@ footer .nw{white-space:nowrap}
 .oshi li button{border:0;background:none;font-size:18px;line-height:1;cursor:pointer;color:var(--ink);padding:2px 6px}
 .oshi p{font-size:13px;font-weight:800;margin:10px 0 0;opacity:.7}
 @media(max-width:860px){.oshi{padding:0 16px}}
+.oshi ul.pk{flex-direction:column;align-items:stretch;gap:6px}
+.oshi ul.pk li{border-radius:12px;padding:6px 8px 6px 8px;gap:10px}
+.oshi ul.pk li img{width:34px;height:48px;object-fit:cover;border-radius:6px;flex:none}
+.oshi ul.pk li span{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.25}
+.oshi ul.pk li span small{font-size:12px}
+.oshi ul.pk li button{border:2px solid var(--ink);border-radius:999px;padding:6px 12px;font-size:14px;font-weight:900;white-space:nowrap}
+.oshi ul.pk li button.on{background:var(--on);color:var(--ont);border-color:var(--on)}
+.oshi .ani{margin-top:10px;border:3px solid var(--ink);background:var(--bg);color:var(--ink);border-radius:12px;padding:10px 16px;font-size:15px;font-weight:900;cursor:pointer}
 .pg figure{margin:0;position:relative;min-width:0;min-height:0}
 .pg figure img{width:100%;height:100%;aspect-ratio:auto;object-fit:cover;border-radius:5px;display:block}
 .pg figcaption{position:absolute;left:0;right:0;bottom:0;padding:22px 7px 7px;border-radius:0 0 5px 5px;background:linear-gradient(transparent,rgba(0,0,0,.55) 30%,rgba(0,0,0,.85));color:#fff;font-size:11px;font-weight:900;line-height:1.3;pointer-events:none;display:flex;flex-direction:column;gap:2px}
@@ -230,6 +238,10 @@ footer .nw{white-space:nowrap}
 <select id="oshiK" aria-label="種類"><option>アーティスト</option><option>漫画</option><option>アニメ</option><option>声優</option><option>その他</option></select>
 <button>登録</button></form><ul id="oshiL"></ul>
 <p>登録した推しのライブ・展示・コラボは、毎月のイベント更新で探して台帳に入ります。</p></details>
+<details class="oshi" id="PICK" hidden><summary>＋ 名指しで登録</summary>
+<form id="pickF" autocomplete="off"><input id="pickQ" placeholder="作品名（例: 生徒会にも穴はある）" aria-label="作品名" required><button>探す</button></form>
+<div id="pickR"></div>
+<p>台帳の1000本にあればそれを「読みたい・観たい」に。無ければAniListから探して台帳に足します（アニメ・漫画）。</p></details>
 <footer><details><summary>出典と注意書き</summary>
   アニメの情報とカバー画像は <a href="https://anilist.co" rel="noopener">AniList</a>、
   映画のポスターと邦題は <a href="https://www.themoviedb.org" rel="noopener">TMDB</a> より。
@@ -290,6 +302,15 @@ const img = (u, k, lazy = true) => u
 const LOCAL_KEY = 'quest-checks-v1', OUTBOX_KEY = 'quest-outbox-v1';
 const local = ls.get(LOCAL_KEY, {});
 let outbox = ls.get(OUTBOX_KEY, []);
+// 名指しで登録して足した作品（元の1000本に無かった物）。パック本体に混ぜて普通の作品として扱う。
+// DBには verdict と一緒に title='題名｜画像URL｜年' で預け、他の端末はそれを読んで同じ作品を足す
+const EXTRA_KEY = 'quest-extra-v1';
+const extra = ls.get(EXTRA_KEY, {});
+const addExtra = (slug, it, save = true) => { const p = QUEST.packs.find(p => p.slug === slug); if (!p || !it.id) return null;
+  const has = p.items.find(x => x.id === it.id); if (has) return has;
+  p.items.push(it); if (save) { (extra[slug] = extra[slug] || {})[it.id] = it; ls.set(EXTRA_KEY, extra); } return it; };
+const extraTitle = it => `${it.t}｜${it.img || ''}｜${it.s || ''}`;
+for (const [slug, m] of Object.entries(extra)) for (const it of Object.values(m)) addExtra(slug, it, false);
 const MITA = {done:'観た', no:'観てない', want:'観たい'};
 const ITTA = {done:'行った', no:'行ってない', want:'行きたい'};
 const VERBS = {
@@ -599,11 +620,11 @@ redraw();
 
 // ═══════════════ 送信箱: 即ローカル保存 → まとめてGASへ。失敗しても残って次に送る ═══════════════
 let flushTimer = null;
-function record(slug, it, verdict) {
+function record(slug, it, verdict, title) {
   slug = realSlug(slug, it.id);
   (local[slug] = local[slug] || {})[it.id] = verdict;
   ls.set(LOCAL_KEY, local);
-  queue(slug, it.id, it.t, verdict);
+  queue(slug, it.id, title || it.t, verdict);
 }
 function queue(pack, id, title, verdict) {
   if (!ownerKey()) return;      // 持ち主以外の判定はDBへ送らない（端末内だけ）
@@ -639,6 +660,8 @@ if (ownerKey()) {
     if (!d.ok) return;
     for (const r of d.rows.sort((a, b) => String(a.ts).localeCompare(String(b.ts)))) {
       if (r.pack === 'notes') { NOTE_DB[r.id] = String(r.title || ''); continue; }   // ひとことコメント: 最新の行が有効
+      if (MEDIA.has(r.pack) && String(r.title).includes('｜')) { const [t, img, s] = String(r.title).split('｜'); addExtra(r.pack, { id: r.id, t, img, s: +s || undefined }); }   // 名指しで足した作品
+      if (r.pack in extra && extra[r.pack][r.id]) { delete extra[r.pack][r.id]; ls.set(EXTRA_KEY, extra); }   // DBに届いた分は端末の控えを消す
       if (r.verdict) (QUEST.base[r.pack] = QUEST.base[r.pack] || {})[r.id] = r.verdict;
     }
     // 端末の控えのうちDBに届いた分は消す（DBと同じ中身になったもの）
@@ -690,6 +713,47 @@ if (ownerKey()) {
     ls.set(OSHI_KEY, oshiLocal); drawOshi();
   }).catch(() => {});
   drawOshi();
+
+  // ═══ 名指しで登録: 台帳内（アニメ・漫画・映画の1000本）を探す → 無ければAniListで探して足す ═══
+  $('PICK').hidden = false;
+  const norm = s => String(s || '').normalize('NFKC').toLowerCase().replace(/[\s・、。!！?？~〜～「」『』]/g, '');
+  const packOf = slug => QUEST.packs.find(p => p.slug === slug);
+  const inPack = (slug, id) => packOf(slug).items.some(x => x.id === id);
+  let pickList = [];
+  const pickLocal = qv => { const n = norm(qv); if (!n) return []; const out = [];
+    for (const slug of ['manga1000', 'anime1000', 'movies1000']) for (const it of packOf(slug).items) if (norm(it.t).includes(n)) out.push({ slug, it });
+    return out.sort((a, b) => norm(a.it.t).length - norm(b.it.t).length).slice(0, 12); };
+  async function pickAni(qv) {
+    const f = 'id title{native romaji} startDate{year} coverImage{large}';
+    const query = `query($s:String){manga:Page(perPage:5){media(search:$s,type:MANGA){${f}}} anime:Page(perPage:4){media(search:$s,type:ANIME){${f}}}}`;
+    const r = await fetch('https://graphql.anilist.co', { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ query, variables: { s: qv } }) });
+    const d = (await r.json()).data || {};
+    const mk = (slug, pre) => m => ({ slug, it: { id: pre + m.id, t: m.title.native || m.title.romaji, s: (m.startDate || {}).year || undefined, img: (m.coverImage || {}).large } });
+    return [...((d.manga || {}).media || []).map(mk('manga1000', 'm')), ...((d.anime || {}).media || []).map(mk('anime1000', 'a'))].filter(x => x.it.t);
+  }
+  const vLabel = (slug, id) => { const v = verdictOf(slug, id); return v ? verbsOf(slug)[v] || (v === 'nope' ? '興味ない' : v) : '未判定'; };
+  function pickRender(list, src) { pickList = list;
+    $('pickR').innerHTML = (list.length ? `<ul class="pk">${list.map((x, i) => { const on = verdictOf(x.slug, x.it.id) === 'want';
+      return `<li><img src="${esc((x.it.img || '').replace('/cover/large/', '/cover/medium/'))}" alt="" onerror="this.remove()"><span><b>${esc(x.it.t)}</b><small>${esc(short(packOf(x.slug).name))}${x.it.s ? ' ' + esc(x.it.s) : ''}${inPack(x.slug, x.it.id) ? ' ・ ' + esc(vLabel(x.slug, x.it.id)) : ' ・ 台帳にない'}</small></span><button type="button" data-i="${i}" class="${on ? 'on' : ''}">${on ? '✓ ' : ''}${esc(verbsOf(x.slug).want)}</button></li>`; }).join('')}</ul>`
+      : '<p>台帳にはみつかりませんでした。</p>') + (src === 'local' ? '<button class="ani" type="button">AniListで探す（無ければ台帳に足す）</button>' : '');
+  }
+  async function pickFromAni(qv) { $('pickR').innerHTML = '<p>AniListで探しています…</p>';
+    try { pickRender(await pickAni(qv), 'ani'); } catch (e) { $('pickR').innerHTML = '<p>AniListにつながりませんでした。電波のある所でもう一度。</p>'; } }
+  const pickOne = x => { const was = inPack(x.slug, x.it.id), it = addExtra(x.slug, x.it) || x.it;
+    record(x.slug, it, 'want', was ? it.t : extraTitle(it)); flush(); redraw(); };
+  $('pickF').addEventListener('submit', e => { e.preventDefault(); const qv = $('pickQ').value.trim(); if (!qv) return;
+    const L = pickLocal(qv); if (L.length) pickRender(L, 'local'); else pickFromAni(qv); });
+  $('pickR').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return;
+    if (b.classList.contains('ani')) { pickFromAni($('pickQ').value.trim()); return; }
+    const x = pickList[+b.dataset.i]; if (!x) return; pickOne(x); b.classList.add('on'); b.textContent = '✓ ' + verbsOf(x.slug).want; });
+  // 一度だけ: Claudeに頼まれた名指し登録を、この端末で起動時に済ませる（台帳に無い物はAniListから足す）
+  const SEED_KEY = 'pick-seed-v1', seeded = ls.get(SEED_KEY, []);
+  const PICK_SEED = [['生徒会にも穴はある', 'manga1000'], ['追放されたチート付与魔術師は気ままなセカンドライフを謳歌する', 'manga1000']];
+  (async () => { let changed = false;
+    for (const [t, slug] of PICK_SEED) { if (seeded.includes(t)) continue;
+      try { const hit = pickLocal(t).find(x => x.slug === slug) || (await pickAni(t)).find(x => x.slug === slug);
+        if (hit) { pickOne(hit); changed = true; } seeded.push(t); ls.set(SEED_KEY, seeded); } catch (e) { /* 圏外: 次に開いた時にもう一度 */ } }
+    if (changed) redraw(); })();
 }
 $('qnote').textContent = ownerKey()
   ? '判定はこの端末に即保存され、電波があれば台帳のDBにも送られます。'
