@@ -28,7 +28,7 @@ img.mark{background:none;object-fit:contain;border-radius:0}
 .art{position:relative;display:grid;grid-template-columns:2fr 1fr;grid-template-rows:repeat(3,minmax(0,1fr));gap:6px;height:640px}
 .art img{width:100%;height:100%;object-fit:cover;border-radius:6px;display:block}.art>img:first-child{grid-row:span 3}
 .art.railon{display:block;container-type:size}
-.rail{display:grid;grid-template-rows:repeat(3,minmax(0,1fr));grid-auto-flow:column;grid-auto-columns:calc((100cqh - 12px) / 3 * 2 / 3);gap:6px;height:100%;overflow-x:auto;scrollbar-width:none;cursor:grab;touch-action:pan-y}.rail::-webkit-scrollbar{display:none}.rail.drag{cursor:grabbing}
+.rail{display:grid;grid-template-rows:repeat(2,minmax(0,1fr));grid-auto-flow:column;grid-auto-columns:calc((100cqh - 6px) / 2 * 2 / 3);gap:6px;height:100%;overflow-x:auto;scrollbar-width:none;cursor:grab;touch-action:pan-y}.rail::-webkit-scrollbar{display:none}.rail.drag{cursor:grabbing}
 .art .rail img{height:100%;width:100%;min-height:0;border-radius:6px;object-fit:cover;user-select:none;-webkit-user-drag:none;pointer-events:none}
 .cap{font-size:26px;font-weight:900;letter-spacing:-.03em;margin:18px 0 0;line-height:1.35}.cap small{display:block;font-size:14px;font-weight:700;letter-spacing:0}
 .nb{display:inline-block}
@@ -208,6 +208,7 @@ footer .nw{white-space:nowrap}
 .pg figcaption i.o{background:#ffd400;color:#111}
 .pg>figure:first-child figcaption{font-size:16px;padding:40px 10px 10px;gap:4px}.pg>figure:first-child figcaption small{font-size:12px}
 .pg>figure:first-child figcaption i{font-size:12px}
+.rail>figure:first-child figcaption{font-size:11px;padding:22px 7px 7px;gap:2px}.rail>figure:first-child figcaption small{font-size:10px}.rail>figure:first-child figcaption i{font-size:10px}
 .shd{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 0}.shd span{border:2px solid currentColor;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:900}
 .sec .more{float:right;border:0;background:none;font:900 14px/1.6 inherit;color:var(--on);cursor:pointer}
 .dstrip{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:8px 0 4px}.dstrip::-webkit-scrollbar{display:none}
@@ -567,11 +568,11 @@ if (mode == 'want') {
   // 表紙: ポスターが左→右へゆっくり流れ続ける帯（マウスを乗せると止まる・ドラッグ可）
   const f = PACKS[0], A = $('A');
   A.classList.add('railon');
-  // スマホの表紙と同じ混ぜ方（イベント→やりたい→新着→観たい/読みたい）。足りなければアニメで埋め、3の倍数で切る
-  let xs = mixPool(); if (xs.length < 39) xs = xs.concat(wantPool(f).map(it => ({ p: f, it })));
-  xs = xs.slice(0, Math.floor(Math.min(xs.length, 39) / 3) * 3);
-  const ps = xs.map(x => img((x.it.img || '').replace('/cover/large/', '/cover/medium/'), `q:${x.p.slug}:${x.it.id}`, false)).join('');
-  A.innerHTML = `<div class="rail" id="RL">${ps}${ps}</div>`;
+  // スマホの表紙と同じ混ぜ方（イベント→やりたい→新着→観たい/読みたい）。足りなければアニメで埋める
+  let xs = mixPool(); if (xs.length < 40) xs = xs.concat(wantPool(f).map(it => ({ p: f, it })));
+  xs = xs.slice(0, Math.floor(Math.min(xs.length, 40) / 2) * 2);   // 2段なので偶数で切る
+  const ps = xs.map((x, i) => mixTile(x, i + 1)).join('');   // スマホの表紙と同じ説明文つきタイル（i+1: 先頭の大判扱いを避ける）
+  A.innerHTML = `<div class="rail pg" id="RL">${ps}${ps}</div>`;
   const rl = $('RL'), still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let pos = 0, half = 0, hold = false, t0 = 0, drag = null;
   const wrap = () => { half = rl.scrollWidth / 2; if (pos <= 0) pos += half; if (pos >= half) pos -= half; rl.scrollLeft = pos; };
