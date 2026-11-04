@@ -565,7 +565,7 @@ const redraw = () => { if (mode == 'want') { drawToc(); drawWant(); } else drawD
 
 if (mode == 'want') {
   $('T').textContent = 'クエスト';
-  // 表紙: ポスターが左→右へゆっくり流れ続ける帯（マウスを乗せると止まる・ドラッグ可）
+  // 表紙: ポスターが左→右へゆっくり流れ続ける帯（ドラッグ・ホイールで送れる。触ってから2.5秒で流れに戻る）
   const f = PACKS[0], A = $('A');
   A.classList.add('railon');
   // スマホの表紙と同じ混ぜ方（イベント→やりたい→新着→観たい/読みたい）。足りなければアニメで埋める
@@ -580,12 +580,12 @@ if (mode == 'want') {
   requestAnimationFrame(() => { half = rl.scrollWidth / 2; pos = half / 2; wrap();
     (function tick() { if (!hold && !still && innerWidth > 900) { pos -= 0.6; wrap(); } requestAnimationFrame(tick); })(); });
   rl.addEventListener('scroll', () => { if (hold && !drag) { pos = rl.scrollLeft; if (pos <= 0 || pos >= half) wrap(); } });
-  rl.addEventListener('wheel', () => pause(2000), { passive: true });
-  rl.addEventListener('mouseenter', () => pause()); rl.addEventListener('mouseleave', () => { if (!drag) pause(800); });
+  // 触った後は必ず流れに戻る: マウスを乗せただけでは止めない（乗せたまま止まり続けるのが「操作すると止まる」の正体だった）
+  rl.addEventListener('wheel', () => pause(2500), { passive: true });
   rl.addEventListener('pointerdown', e => { drag = { x: e.clientX, p: pos }; pause(); rl.classList.add('drag'); rl.setPointerCapture(e.pointerId); });
   rl.addEventListener('pointermove', e => { if (!drag) return; pos = drag.p - (e.clientX - drag.x); wrap(); });
-  const up = () => { if (!drag) return; drag = null; rl.classList.remove('drag'); pause(2000); };
-  rl.addEventListener('pointerup', up); rl.addEventListener('pointercancel', up);
+  const up = () => { if (!drag) return; drag = null; rl.classList.remove('drag'); pause(2500); };
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => rl.addEventListener(ev, up)); addEventListener('blur', up);
 
   // 題字の下の小さい帯: 全クエストから3枚ずつ。自動では流さない
   const t = PACKS.flatMap(p => wantPool(p).slice(0, 3).map(it => img(it.img, `q:${p.slug}:${it.id}`, false))).join('');
