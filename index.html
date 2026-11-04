@@ -567,7 +567,10 @@ if (mode == 'want') {
   // 表紙: ポスターが左→右へゆっくり流れ続ける帯（マウスを乗せると止まる・ドラッグ可）
   const f = PACKS[0], A = $('A');
   A.classList.add('railon');
-  const ps = shuffle(wantPool(f).slice(0, 80)).slice(0, 39).map(it => img(it.img, `q:${f.slug}:${it.id}`, false)).join('');
+  // スマホの表紙と同じ混ぜ方（イベント→やりたい→新着→観たい/読みたい）。足りなければアニメで埋め、3の倍数で切る
+  let xs = mixPool(); if (xs.length < 39) xs = xs.concat(wantPool(f).map(it => ({ p: f, it })));
+  xs = xs.slice(0, Math.floor(Math.min(xs.length, 39) / 3) * 3);
+  const ps = xs.map(x => img((x.it.img || '').replace('/cover/large/', '/cover/medium/'), `q:${x.p.slug}:${x.it.id}`, false)).join('');
   A.innerHTML = `<div class="rail" id="RL">${ps}${ps}</div>`;
   const rl = $('RL'), still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let pos = 0, half = 0, hold = false, t0 = 0, drag = null;
