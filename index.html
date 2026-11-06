@@ -675,6 +675,11 @@ if (ownerKey()) {
       if (r.pack in extra && extra[r.pack][r.id]) { delete extra[r.pack][r.id]; ls.set(EXTRA_KEY, extra); }   // DBに届いた分は端末の控えを消す
       if (r.verdict) (QUEST.base[r.pack] = QUEST.base[r.pack] || {})[r.id] = r.verdict;
     }
+    // 判定もDBが正: 送信箱に残っていない端末の判定は送信済み＝DBに入っているので消す（他の端末やClaudeが後から変えた判定に負けないように）
+    const pend = new Set(outbox.map(o => o.pack + ':' + o.id)), inDB = new Set(d.rows.filter(r => r.verdict).map(r => r.pack + ':' + r.id));
+    for (const [slug, m] of Object.entries(local)) for (const id of Object.keys(m))
+      if (!pend.has(slug + ':' + id) && inDB.has(slug + ':' + id)) delete m[id];
+    ls.set(LOCAL_KEY, local);
     // 端末の控えのうちDBに届いた分は消す（DBと同じ中身になったもの）
     for (const k of Object.keys(notes)) if (NOTE_DB[k] === notes[k]) delete notes[k];
     ls.set(NOTES_KEY, notes);
