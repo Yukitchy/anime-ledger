@@ -385,11 +385,14 @@ const doneEvents = () => PACKS.filter(p => p.slug === 'anime-events' || p.slug =
                theater: (String(it.s || '').match(/（(.+?)）/) || [])[1] || '' })))
   .filter((x, i, a) => a.findIndex(y => y.title === x.title) === i);
 // 読書記録: 「読んだ/途中」の漫画にメモ（例「1-19巻読んだ」）を書くと、メモを書いた日の行として時系列に出る
-// ponytail: 1作品1行（最新のメモの日だけ）。巻ごとの履歴が要るならメモ行を全部拾う形に
+// メモを書き換えるたびに1行ずつ履歴として残る（同じ日に何度直しても、その日の最後の1行だけ）。最新の行にだけ今の判定（途中/読んだ）を付ける
 const readLog = () => PACKS.filter(p => p.slug === 'manga1000').flatMap(p => p.items.flatMap(it => {
-  const k = `q:${p.slug}:${it.id}`, v = verdictOf(p.slug, it.id);
-  if (!NOTE_TS[k] || !noteOf(k) || !['done', 'skip'].includes(v)) return [];
-  return [{ key: it.id, k, title: it.t, date: new Date(NOTE_TS[k]).toLocaleDateString('sv'), cover: it.img, c: '漫画', theater: v === 'skip' ? '途中' : '読んだ' }];
+  const k = `q:${p.slug}:${it.id}`, v = verdictOf(p.slug, it.id), h = NOTE_HIST[k] || [];
+  if (!h.length || !['done', 'skip'].includes(v)) return [];
+  const byDay = new Map(); for (const [ts, c] of h) if (c) byDay.set(new Date(ts).toLocaleDateString('sv'), c);
+  const days = [...byDay.keys()].sort(), last = days[days.length - 1];
+  return days.map(d => ({ key: it.id, k, title: it.t, date: d, cover: it.img, c: '漫画', memo: byDay.get(d),
+    theater: d === last ? (v === 'skip' ? '途中' : '読んだ') : '' }));
 }));
 const tlItems = i => { const m = MOVIES.map(x => ({...x, c: '映画', k: 'm:' + x.key})), s = SAUNA.map(x => ({...x, c: 'サウナ', k: 's:' + x.key}));
   return i == 0 ? [...m, ...s, ...doneEvents(), ...readLog()].filter(x => x.date) : i == 1 ? m : i == 3 ? doneEvents() : s; };
@@ -403,7 +406,7 @@ const STAR_MOVED = { a3446: 'tバイオハザド' };
 for (const [from, to] of Object.entries(STAR_MOVED))
   if (stars[from] != null && stars[to] == null) { stars[to] = stars[from]; delete stars[from]; ls.set(STARS_KEY, stars); }
 const NOTES_KEY = 'anime-ledger-notes-v1';
-const notes = ls.get(NOTES_KEY, {}), NOTE_DB = {}, NOTE_TS = {};   // NOTE_TS: メモを書いた日時（読書記録の日付）
+const notes = ls.get(NOTES_KEY, {}), NOTE_DB = {}, NOTE_HIST = {};   // NOTE_HIST: メモの書き換え履歴 [[日時, 中身]]（読書記録の日付）
 const noteOf = k => notes[k] != null ? notes[k] : NOTE_DB[k] || '';
 const noteSpan = k => { const c = noteOf(k); return c ? `<span class="cm">${esc(c)}</span>` : ''; };
 const starsOf = m => stars[m.key] != null ? stars[m.key] : starDB()[m.key] != null ? +String(starDB()[m.key]).slice(1) : (m.score != null ? Math.round(m.score / 2) : 0);
@@ -445,7 +448,7 @@ function tlHTML(i) {
     const dd = x.date ? new Date(x.date + 'T00:00') : null;
     const times = x.times > 1 ? x.times + '回目' : x.visits > 1 ? '通算' + x.visits + '回' : '';
     h += `<div class="tr" data-k="${esc(x.k)}"><div class="dt">${dd ? `<b>${dd.getDate()}</b><span>${g == 'これから' ? (dd.getMonth() + 1) + '月 ' : ''}${WD[dd.getDay()]}</span>` : ''}</div>` +
-         `${rimg(x.cover, x.k)}<div class="tx"><b>${esc(x.title)}</b><span>${esc([x.theater, i == 0 ? x.c : '', times].filter(Boolean).join(' · '))}</span>${starSpan(x)}${noteSpan(x.k)}</div></div>`;
+         `${rimg(x.cover, x.k)}<div class="tx"><b>${esc(x.title)}</b><span>${esc([x.theater, i == 0 ? x.c : '', times].filter(Boolean).join(' · '))}</span>${starSpan(x)}${x.memo != null ? `<span class="cm">${esc(x.memo)}</span>` : noteSpan(x.k)}</div></div>`;
   }
   return [h, n];
 }
@@ -670,7 +673,7 @@ if (ownerKey()) {
   fetch(GAS_URL + '?token=' + ownerKey()).then(r => r.json()).then(d => {
     if (!d.ok) return;
     for (const r of d.rows.sort((a, b) => String(a.ts).localeCompare(String(b.ts)))) {
-      if (r.pack === 'notes') { NOTE_DB[r.id] = String(r.title || ''); NOTE_TS[r.id] = r.ts; continue; }   // ひとことコメント: 最新の行が有効
+      if (r.pack === 'notes') { NOTE_DB[r.id] = String(r.title || ''); (NOTE_HIST[r.id] = NOTE_HIST[r.id] || []).push([r.ts, NOTE_DB[r.id]]); continue; }   // ひとことコメント: 最新の行が有効
       if (MEDIA.has(r.pack) && String(r.title).includes('｜')) { const [t, img, s] = String(r.title).split('｜'); addExtra(r.pack, { id: r.id, t, img, s: +s || undefined }); }   // 名指しで足した作品
       if (r.pack in extra && extra[r.pack][r.id]) { delete extra[r.pack][r.id]; ls.set(EXTRA_KEY, extra); }   // DBに届いた分は端末の控えを消す
       if (r.verdict) (QUEST.base[r.pack] = QUEST.base[r.pack] || {})[r.id] = r.verdict;
@@ -783,7 +786,7 @@ function openSheet(k) {
   SCT.value = noteOf(k); SCB.textContent = '保存'; SCB.classList.remove('ok');
   SCT.oninput = () => { SCB.textContent = '保存'; SCB.classList.remove('ok'); };
   SCB.onclick = () => { const v = SCT.value.trim().slice(0, 100);
-    notes[k] = v; NOTE_TS[k] = new Date().toISOString(); ls.set(NOTES_KEY, notes); queue('notes', k, v, 'c'); flush();
+    notes[k] = v; (NOTE_HIST[k] = NOTE_HIST[k] || []).push([new Date().toISOString(), v]); ls.set(NOTES_KEY, notes); queue('notes', k, v, 'c'); flush();
     SCB.textContent = '保存した'; SCB.classList.add('ok'); };
   const src = o.it ? o.it.img : o.rec.cover;
   $('SI').src = src || ''; $('SI').hidden = !src;
