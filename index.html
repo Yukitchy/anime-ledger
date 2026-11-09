@@ -799,21 +799,23 @@ function openSheet(k) {
   const evx = o.it && EVENT_PACKS.has(o.slug);
   $('SM').innerHTML = esc(o.m || '') + (evx ? `<span class="shd"><span>${esc(md(o.it.start))}${o.it.end && o.it.end !== o.it.start ? '〜' + esc(md(o.it.end)) : ''}</span>${o.it.genre ? `<span>${esc(o.it.genre)}</span>` : ''}${isOshi(o.it) ? '<span>★推し</span>' : ''}</span>` : '');
   // クエストの作品 = 判定ボタン（本番の判定の仕組みへ）／記録の作品 = 星評価
-  SV.hidden = !o.it; SS.hidden = !o.rec;
+  SV.hidden = !o.it;
+  // 星: 記録の作品と、「行った」にしたイベント（鍵は一覧の行と同じ it.id）
+  const recOf = () => o.rec || (evx && verdictOf(o.slug, o.it.id) === 'done' ? { key: o.it.id, title: o.it.t } : null);
+  const drawStars = () => { const rec = recOf(); SS.hidden = !rec; if (!rec) return;
+    const draw = n => SS.innerHTML = [1, 2, 3, 4, 5].map(v => `<button data-v="${v}" class="${v <= n ? 'on' : ''}" aria-label="星${v}つ">★</button>`).join('');
+    draw(starsOf(rec));
+    SS.onclick = e => { const b = e.target.closest('button'); if (!b) return;
+      const v = +b.dataset.v, next = starsOf(rec) === v ? 0 : v;
+      stars[rec.key] = next; ls.set(STARS_KEY, stars); queue('stars', rec.key, rec.title, 's' + next); draw(next); redraw(); }; };
+  drawStars();
   if (o.it) {
     const V = verbsOf(o.slug), v = verdictOf(o.slug, o.it.id);
     SV.innerHTML = ['done', 'want', 'skip', 'no', 'nope'].filter(x => (x != 'skip' || V.skip !== false) && (x != 'nope' || hasNope(o.slug)))
       .map(x => `<button data-v="${x}" class="${x == v ? 'on' : ''}">${x == 'skip' ? '途中' : x == 'nope' ? '興味ない' : V[x]}</button>`).join('');
     SV.onclick = e => { const b = e.target.closest('button'); if (!b) return;
       record(o.slug, o.it, b.dataset.v);
-      SV.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); redraw(); };
-  }
-  if (o.rec) {
-    const draw = n => SS.innerHTML = [1, 2, 3, 4, 5].map(v => `<button data-v="${v}" class="${v <= n ? 'on' : ''}" aria-label="星${v}つ">★</button>`).join('');
-    draw(starsOf(o.rec));
-    SS.onclick = e => { const b = e.target.closest('button'); if (!b) return;
-      const v = +b.dataset.v, next = starsOf(o.rec) === v ? 0 : v;
-      stars[o.rec.key] = next; ls.set(STARS_KEY, stars); queue('stars', o.rec.key, o.rec.title, 's' + next); draw(next); };
+      SV.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); drawStars(); redraw(); };
   }
   const place = o.it && PLACE_PACKS.has(o.slug), vid = o.vid || (o.it && VIDEO_PACKS.has(o.slug)), url = o.it && o.it.url;
   const SA = $('SA');
