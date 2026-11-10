@@ -198,6 +198,7 @@ footer .nw{white-space:nowrap}
 .oshi ul.pk li button.on{background:var(--on);color:var(--ont);border-color:var(--on)}
 .oshi .ani{margin-top:10px;border:3px solid var(--ink);background:var(--bg);color:var(--ink);border-radius:12px;padding:10px 16px;font-size:15px;font-weight:900;cursor:pointer}
 .pg figure{margin:0;position:relative;min-width:0;min-height:0}
+.pg figure.noimg{background:var(--ink);border-radius:5px;aspect-ratio:2/3}
 .pg figure img{width:100%;height:100%;aspect-ratio:auto;object-fit:cover;border-radius:5px;display:block}
 .pg figcaption{position:absolute;left:0;right:0;bottom:0;padding:22px 7px 7px;border-radius:0 0 5px 5px;background:linear-gradient(transparent,rgba(0,0,0,.55) 30%,rgba(0,0,0,.85));color:#fff;font-size:11px;font-weight:900;line-height:1.3;pointer-events:none;display:flex;flex-direction:column;gap:2px}
 .pg figcaption .tg2{display:flex;flex-wrap:wrap;gap:3px}
@@ -533,7 +534,7 @@ function mixTile(x, i) {
   const tag = ev ? `<i>${esc(md(it.start))}${it.end && it.end !== it.start ? '〜' + esc(md(it.end)) : ''}</i>` : `<i>${esc(short(p.name))}</i>`;
   const oshi = ev && isOshi(it) ? '<i class="o">★推し</i>' : want ? `<i class="o">${esc(verbsOf(p.slug).want)}</i>` : '';
   const where = ev ? String(it.s || '').replace(/・[^・]*$/, '').replace(/^.*?（(.+?)）.*$/, '$1') : '';
-  return `<figure>${img(src, k, false).replace('<img ', i > 8 ? '<img fetchpriority="low" ' : '<img fetchpriority="high" ')}<figcaption><span class="tg2">${tag}${oshi}</span><b>${esc(ev ? String(it.t).replace(/[（(][^）)]*[）)]\s*$/, '').trim() : it.t)}</b>${where ? `<small>${esc(where)}</small>` : ''}</figcaption></figure>`;
+  return `<figure${it.img ? '' : ` class="noimg" data-k="${esc(k)}"`}>${it.img ? img(src, k, false).replace('<img ', i > 8 ? '<img fetchpriority="low" ' : '<img fetchpriority="high" ') : ''}<figcaption><span class="tg2">${tag}${oshi}</span><b>${esc(ev ? String(it.t).replace(/[（(][^）)]*[）)]\s*$/, '').trim() : it.t)}</b>${where ? `<small>${esc(where)}</small>` : ''}</figcaption></figure>`;
 }
 
 function drawWant() {
@@ -547,8 +548,11 @@ function drawWant() {
   // 開くたびに全部バラバラ: 左上の大1＋右2＋下の段3の6枚
   // 開くたびに全部バラバラ: 左上の大1枚のあとは同じ大きさの3段が右へ続く（指で横に送れる・ゆっくり自動で流れる）
   // 小さい枠は軽い medium 画像（大は1枚目だけ large）。全部すぐ読み始め、見えている9枚を先に
-  const sm = u => (u || '').replace('/cover/large/', '/cover/medium/');
-  $('MH').innerHTML = `<div class="pg">${shuffle(wantPool(p)).slice(0, 60).map((it, i) => img(i ? sm(it.img) : it.img, `q:${p.slug}:${it.id}`, false).replace('<img ', i > 8 ? '<img fetchpriority="low" ' : '<img fetchpriority="high" ')).join('')}</div>` +
+  // パック単体の表紙も「ぜんぶ」と同じ説明文つきタイル（mixTile）で出す。
+  // 画像の無い物は wantPool が落とすので、題名と日付だけのタイルとして後ろに足す（やりたいと言った物を先に）
+  const noImg = p.items.filter(it => !it.img && !isHiddenV(p.slug, verdictOf(p.slug, it.id)));
+  const pool = [...wantPool(p), ...shuffle(noImg.filter(it => verdictOf(p.slug, it.id) === 'want')), ...shuffle(noImg.filter(it => verdictOf(p.slug, it.id) !== 'want'))];
+  $('MH').innerHTML = `<div class="pg">${pool.slice(0, 60).map((it, i) => mixTile({ p, it }, i)).join('')}</div>` +
     (s.done < s.total ? `<button class="go" data-slug="${esc(p.slug)}">まとめて判定する</button>` : '');
   $('BN').innerHTML = TABS.map((p, i) => `<button class="${i == cur ? 'on' : ''}" data-i="${i}">${esc(p === MIX ? 'ぜんぶ' : short(p.name))}</button>`).join('');
 }
@@ -853,7 +857,9 @@ document.addEventListener('click', e => {
   if (band) im = [...band.querySelectorAll('img')].find(i => { const r = i.getBoundingClientRect();
     return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom; });
   const row = e.target.closest('.tr[data-k]');
+  const fg = !im && e.target.closest('.mhero figure[data-k]');   // 画像の無いタイルは figure 自身が鍵を持つ
   if (im && im.dataset.k && !im.closest('.sh,.it')) openSheet(im.dataset.k);
+  else if (fg) openSheet(fg.dataset.k);
   else if (row) openSheet(row.dataset.k);
 });
 
