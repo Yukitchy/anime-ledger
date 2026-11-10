@@ -111,8 +111,9 @@ footer .nw{white-space:nowrap}
  .bnav{display:flex;position:fixed;left:0;right:0;bottom:0;background:var(--bg);padding:8px 4px calc(8px + env(safe-area-inset-bottom));gap:3px;overflow-x:hidden;z-index:50;-webkit-transform:translateZ(0);transform:translateZ(0)}
  .bnav::-webkit-scrollbar{display:none}
  .bnav button{flex:none;padding:9px 14px}
- /* カテゴリは1文字アイコン: ロゴ (.mm) と同じく、太枠の箱に太字1文字をど真ん中へ。全幅均等割りで横スライド無し */
+ /* カテゴリは絵のアイコン: 太枠の箱にピクトグラムをど真ん中へ。全幅均等割りで横スライド無し */
  .bnav button.ic{flex:1 1 0;min-width:0;height:42px;padding:0;display:flex;align-items:center;justify-content:center;font-size:clamp(11px,3.6vw,16px);line-height:1;white-space:nowrap}
+ .bnav button.ic svg{width:clamp(12px,4.2vw,17px);height:clamp(12px,4.2vw,17px);flex:none;display:block}
  .bnav button.ic.all{flex-grow:1.7;font-size:clamp(8.5px,2.6vw,10.5px);letter-spacing:.05em}
  footer{padding:18px 16px calc(96px + env(safe-area-inset-bottom));margin-top:24px}
 }
@@ -365,12 +366,31 @@ const SHORT = {'アニメ人気1000':'アニメ','映画メジャー1000':'映�
   '遊園地アトラクション':'遊園地','日本の世界遺産':'世界遺産','サウナ名店':'サウナ','定番バケットリスト':'定番','前に自分で言ったもの':'自分の言葉',
   'アニメ系イベント（東京圏）':'アニメイベント','今後のイベント（東京圏）':'イベント','ライブ・フェス・コンサート':'ライブ'};
 const short = n => SHORT[n] || n;
-// 下部バーのカテゴリボタンは1文字アイコン（ぜんぶ・すべてだけ ALL）。フルネームは title / aria-label に残す
-// 衝突回避: アニメ=ア に対して アニメイベント=ベ、イベント=イ、自分の言葉=言、世界遺産=遺
-const GLYPH = {anime1000:'ア',movies1000:'映',manga1000:'漫',prefectures:'都',eats100:'食','tokyo-spots':'場',attractions:'遊',
-  'heritage-jp':'遺',sauna100:'サ',bucket100:'定',countries:'国','my-words':'言','anime-events':'ベ','music-events':'ラ','events-2026':'イ'};
-const TL_GLYPH = {'すべて':'ALL','映画':'映','サウナ':'サ','イベント':'イ','アニメ':'ア','漫画':'漫','場所':'場'};
-const navBtn = (i, glyph, label) => `<button class="ic${glyph === 'ALL' ? ' all' : ''}${i == cur ? ' on' : ''}" data-i="${i}" title="${esc(label)}" aria-label="${esc(label)}">${esc(glyph)}</button>`;
+// 下部バーのカテゴリボタンは絵のアイコン（ピクトグラム）。ぜんぶ・すべてだけ ALL の文字。フルネームは title / aria-label に残す
+// アイコンは currentColor で描くので、選択中（.on の青地）では自動で白く反転する。未登録カテゴリは汎用の◎に落とす
+const IC = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+const DT = (cx, cy, r) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="currentColor" stroke="none"/>`;
+const I_TV = IC(`<path d="M9.5 3.5L12 7.5l2.5-4"/><rect x="3.5" y="7.5" width="17" height="12" rx="2.5"/>${DT(9.2, 13.2, 1.3)}${DT(14.8, 13.2, 1.3)}<path d="M10.2 16.3c1.1.9 2.5.9 3.6 0"/>`);
+const I_FILM = IC(`<rect x="4" y="3.5" width="16" height="17" rx="2"/><path d="M8.5 3.5v17M15.5 3.5v17M4 8h4.5M4 12h4.5M4 16h4.5M15.5 8H20M15.5 12H20M15.5 16H20"/>`);
+const I_BOOK = IC(`<path d="M12 6.8C10.1 5.2 7.2 4.6 4 4.6v13.2c3.2 0 6.1.6 8 2.2 1.9-1.6 4.8-2.2 8-2.2V4.6c-3.2 0-6.1.6-8 2.2z"/><path d="M12 6.8v13.2M7.2 8.8c1-.25 2-.25 2.8.1M14.8 8.9c1-.35 2-.35 2.8-.1"/>`);
+const I_MAP = IC(`<path d="M9 4L3.5 6v13.5L9 17.5l6 2 5.5-2V4L15 6z"/><path d="M9 4v13.5M15 6v13.5"/>`);
+const I_BOWL = IC(`<path d="M14.5 3L11 11.2M19 4.2L13.8 11.8"/><path d="M3.5 12.5h17a8.5 8.5 0 0 1 -17 0z"/><path d="M9.5 19.9h5"/>`);
+const I_PIN = IC(`<path d="M12 21.5S5.2 15.9 5.2 9.9a6.8 6.8 0 0 1 13.6 0c0 6-6.8 11.6-6.8 11.6z"/><circle cx="12" cy="9.9" r="2.6"/>`);
+const I_FERRIS = IC(`<circle cx="12" cy="10" r="6.6"/><path d="M12 3.4v13.2M6.3 6.7l11.4 6.6M17.7 6.7L6.3 13.3"/>${DT(12, 10, 1.4)}<path d="M8.3 20.8L12 13.8l3.7 7M5.8 20.8h12.4"/>`);
+const I_CASTLE = IC(`<path d="M12 2.6v1.6M8.4 7L12 4.2 15.6 7"/><path d="M9.7 7h4.6v3.2H9.7z"/><path d="M5.2 13.6L12 10.2l6.8 3.4"/><path d="M7.4 20.6l.8-7h7.6l.8 7z"/>`);
+const I_SAUNA = IC(`<path d="M8.2 10.2c-1.2-1.7 1.2-2.5 0-4.2M12 10.7c-1.2-1.7 1.2-2.5 0-4.2M15.8 10.2c-1.2-1.7 1.2-2.5 0-4.2"/><path d="M5.4 14h13.2l-1.5 6.8H6.9z"/><path d="M6.1 17.2h11.8"/>`);
+const I_STAR = IC(`<path d="M12 3.4l2.6 5.3 5.8.8-4.2 4.1 1 5.8L12 16.7l-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z" fill="currentColor"/>`);
+const I_GLOBE = IC(`<circle cx="12" cy="12" r="8.6"/><ellipse cx="12" cy="12" rx="3.9" ry="8.6"/><path d="M3.4 12h17.2"/>`);
+const I_WORDS = IC(`<rect x="4" y="4.5" width="16" height="11.5" rx="3"/><path d="M8.5 16L7.2 20.3 13 16"/>${DT(8.6, 10.3, 1.2)}${DT(12, 10.3, 1.2)}${DT(15.4, 10.3, 1.2)}`);
+const I_TICKET = IC(`<path d="M4 7.2h16v3.1a2.3 2.3 0 0 0 0 4.4v3.1H4v-3.1a2.3 2.3 0 0 0 0-4.4z"/><path d="M14.8 7.2v10.6" stroke-dasharray="0.5 3"/><path d="M9.2 9.9l.85 1.75 1.93.28-1.4 1.36.33 1.91-1.71-.9-1.71.9.33-1.91-1.4-1.36 1.93-.28z" fill="currentColor" stroke="none"/>`);
+const I_MIC = IC(`<rect x="9" y="2.8" width="6" height="10.8" rx="3"/><path d="M6.3 10.8a5.7 5.7 0 0 0 11.4 0"/><path d="M12 16.8v3.4M8.9 20.4h6.2"/>`);
+const I_CAL = IC(`<rect x="4" y="5.5" width="16" height="15" rx="2"/><path d="M4 10.2h16M8.3 3.2v3.8M15.7 3.2v3.8"/>${DT(12, 15.2, 1.7)}`);
+const I_GEN = IC(`<circle cx="12" cy="12" r="7.6"/>${DT(12, 12, 2.3)}`);
+const ICONS = {anime1000: I_TV, movies1000: I_FILM, manga1000: I_BOOK, prefectures: I_MAP, eats100: I_BOWL, 'tokyo-spots': I_PIN,
+  attractions: I_FERRIS, 'heritage-jp': I_CASTLE, sauna100: I_SAUNA, bucket100: I_STAR, countries: I_GLOBE, 'my-words': I_WORDS,
+  'anime-events': I_TICKET, 'music-events': I_MIC, 'events-2026': I_CAL};
+const TL_ICON = {'すべて': 'ALL', '映画': I_FILM, 'サウナ': I_SAUNA, 'イベント': I_CAL, 'アニメ': I_TV, '漫画': I_BOOK, '場所': I_PIN};
+const navBtn = (i, content, label) => `<button class="ic${content === 'ALL' ? ' all' : ''}${i == cur ? ' on' : ''}" data-i="${i}" title="${esc(label)}" aria-label="${esc(label)}">${content}</button>`;
 const stat = p => { let done = 0, left = 0;
   for (const it of p.items) { const v = verdictOf(p.slug, it.id); if (v === 'done') done++; else if (!v) left++; }
   return { done, left, total: p.items.length, pct: Math.round(100 * done / p.items.length) }; };
@@ -508,7 +528,7 @@ function drawDone() {
   const SF = [['', 'すべて'], ['5', '★5'], ['4', '★4'], ['3', '★3'], ['2', '★2'], ['1', '★1'], ['0', '未評価']];
   const empty = TL_PACKS[cur] && sf !== '' ? '星は映画・サウナ・アニメにだけ付きます。' : cur == 3 && !q.value.trim() ? 'まだ「行った」にしたイベントはありません。やりたい側のイベントを押して「行った」にすると、ここに日付順で入ります。' : 'みつかりませんでした。';
   $('L').innerHTML = `<div class="chips">${ch}</div><div class="sfw"><button class="sfb${sf !== '' ? ' on' : ''}" aria-expanded="${sfOpen}">星：${(SF.find(([v]) => v === sf) || SF[0])[1]} ${sfOpen ? '▴' : '▾'}</button>${sfOpen ? `<div class="chips sf sfm">${SF.map(([v, t]) => `<button data-s="${v}" class="${v === sf ? 'on' : ''}">${t}${v !== '' && cnt[v] ? ' ' + cnt[v] : ''}</button>`).join('')}</div>` : ''}</div>${h || `<p class="empty">${empty}</p>`}${cur == 1 && !q.value.trim() ? statsHTML() : ''}${cur == 0 ? doneStrips() : ''}`;
-  $('BN').innerHTML = TLC.map((c, i) => navBtn(i, TL_GLYPH[c] || [...c][0], c)).join('');
+  $('BN').innerHTML = TLC.map((c, i) => navBtn(i, TL_ICON[c] || I_GEN, c)).join('');
 }
 
 // ═══════════════ ミックス: アニメ以外も混ぜた「やりたい」の表紙（最初のタブ） ═══════════════
@@ -550,7 +570,7 @@ function drawWant() {
   const p = TABS[cur];
   if (p === MIX) {
     $('MH').innerHTML = `<div class="pg">${mixPool().slice(0, 60).map(mixTile).join('')}</div>`;
-    $('BN').innerHTML = TABS.map((p, i) => navBtn(i, p === MIX ? 'ALL' : (GLYPH[p.slug] || [...short(p.name)][0]), p === MIX ? 'ぜんぶ' : short(p.name))).join('');
+    $('BN').innerHTML = TABS.map((p, i) => navBtn(i, p === MIX ? 'ALL' : (ICONS[p.slug] || I_GEN), p === MIX ? 'ぜんぶ' : short(p.name))).join('');
     return;
   }
   const s = stat(p);
@@ -563,7 +583,7 @@ function drawWant() {
   const pool = [...wantPool(p), ...shuffle(noImg.filter(it => verdictOf(p.slug, it.id) === 'want')), ...shuffle(noImg.filter(it => verdictOf(p.slug, it.id) !== 'want'))];
   $('MH').innerHTML = `<div class="pg">${pool.slice(0, 60).map((it, i) => mixTile({ p, it }, i)).join('')}</div>` +
     (s.done < s.total ? `<button class="go" data-slug="${esc(p.slug)}">まとめて判定する</button>` : '');
-  $('BN').innerHTML = TABS.map((p, i) => navBtn(i, p === MIX ? 'ALL' : (GLYPH[p.slug] || [...short(p.name)][0]), p === MIX ? 'ぜんぶ' : short(p.name))).join('');
+  $('BN').innerHTML = TABS.map((p, i) => navBtn(i, p === MIX ? 'ALL' : (ICONS[p.slug] || I_GEN), p === MIX ? 'ぜんぶ' : short(p.name))).join('');
 }
 
 // 目次と表紙の下の一言（判定が変わるたびに描き直す）
