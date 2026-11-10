@@ -75,9 +75,12 @@ img.mark{background:none;object-fit:contain;border-radius:0}
 .chips button.on{background:var(--on);color:var(--ont);border-color:var(--on)}
 .chips.sf{margin:4px 0 8px}.chips.sf button{padding:5px 10px;font-size:14px}.chips.sf b{align-self:center;font-size:14px;margin-right:2px}
 .tx .st{display:block;color:var(--acc);font-size:14px;letter-spacing:1px}
-.find{display:block;width:100%;margin:12px 0 0;border:2px solid var(--ink);border-radius:10px;padding:10px 14px;font:800 15px/1.2 "Hiragino Sans","Noto Sans JP",sans-serif;color:var(--ink);background:var(--bg);-webkit-appearance:none;appearance:none}
+.find{display:block;flex:1 1 auto;min-width:0;margin:0;border:2px solid var(--ink);border-radius:10px;padding:10px 14px;font:800 15px/1.2 "Hiragino Sans","Noto Sans JP",sans-serif;color:var(--ink);background:var(--bg);-webkit-appearance:none;appearance:none}
 .find:focus{outline:3px solid var(--acc);outline-offset:0}
 .want .find{display:none}
+.qrow{display:flex;gap:8px;align-items:stretch;margin:12px 0 0}
+.sfslot{display:flex;flex:none}
+.want .qrow{display:none}
 .yy{font-size:48px;font-weight:900;letter-spacing:-.04em;line-height:1;margin:30px 0 0;padding-bottom:8px;border-bottom:6px solid var(--ink)}
 .mo{font-size:18px;font-weight:900;margin:16px 0 2px}
 .tr{display:grid;grid-template-columns:52px 44px 1fr;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--ink)}
@@ -121,7 +124,7 @@ footer .nw{white-space:nowrap}
  .pg{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}.pg img,.pg .ph{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:5px;display:block}
  .pg>:first-child{grid-column:span 2;grid-row:span 2}
  .go{display:block;width:100%;margin-top:12px;border:0;border-radius:10px;background:var(--on);color:var(--ont);padding:14px;font:900 16px/1 "Hiragino Sans",sans-serif;cursor:pointer}
- .find{margin-top:0}.done .toc .yy:first-of-type{margin-top:18px}
+ .qrow{margin-top:0}.done .toc .yy:first-of-type{margin-top:18px}
  .catbtn{margin-bottom:0}
  .catmenu{left:16px}
  footer{padding:18px 16px calc(40px + env(safe-area-inset-bottom));margin-top:24px}
@@ -234,7 +237,7 @@ footer .nw{white-space:nowrap}
 .tx .cm{display:block;font-size:13px;font-weight:800;opacity:.75;margin-top:2px}
 .tx .cm::before{content:"💬 "}
 .sfw{margin:8px 0 6px}
-.sfb{border:2px solid var(--ink);background:var(--bg);color:var(--ink);border-radius:999px;padding:6px 14px;font:900 14px/1.2 "Hiragino Sans",sans-serif;cursor:pointer}
+.sfb{border:2px solid var(--ink);background:var(--bg);color:var(--ink);border-radius:999px;padding:6px 14px;font:900 14px/1.2 "Hiragino Sans",sans-serif;cursor:pointer;white-space:nowrap}
 .sfb.on{background:var(--on);color:var(--ont);border-color:var(--on)}
 .sfm{margin:8px 0 0}
 </style>
@@ -245,7 +248,7 @@ footer .nw{white-space:nowrap}
 <div class="swrow"><img class="mark mm" src="logo.png" alt=""><button class="catbtn" id="CB" aria-haspopup="true" aria-expanded="false"></button><div class="catmenu" id="CM" hidden></div><nav class="sw" id="S"></nav></div>
 <div class="art" id="A"></div><p class="cap" id="C"></p>
 <div class="mhero" id="MH"></div>
-<div class="toc"><h2 id="T"></h2><input type="search" class="find" id="q" placeholder="作品名でしぼり込む" aria-label="作品名でしぼり込む"><div id="L"></div></div>
+<div class="toc"><h2 id="T"></h2><div class="qrow"><input type="search" class="find" id="q" placeholder="作品名でしぼり込む" aria-label="作品名でしぼり込む"><span class="sfslot" id="SF"></span></div><div id="L"></div></div>
 </div>
 <details class="oshi" id="OSHI" hidden><summary>★ 推しリスト <span id="oshiN"></span></summary>
 <form id="oshiF" autocomplete="off"><input id="oshiQ" placeholder="アーティスト・漫画・作品名" aria-label="推しの名前" required>
@@ -551,7 +554,8 @@ function drawDone() {
   const cnt = {}; for (const m of starItems(cur)) { const n = starsOf(m); cnt[n] = (cnt[n] || 0) + 1; }
   const SF = [['', 'すべて'], ['5', '★5'], ['4', '★4'], ['3', '★3'], ['2', '★2'], ['1', '★1'], ['0', '未評価']];
   const empty = TL_PACKS[cur] && sf !== '' ? '星は映画・サウナ・アニメにだけ付きます。' : cur == 3 && !q.value.trim() ? 'まだ「行った」にしたイベントはありません。やりたい側のイベントを押して「行った」にすると、ここに日付順で入ります。' : 'みつかりませんでした。';
-  $('L').innerHTML = `<div class="chips">${ch}</div><div class="sfw"><button class="sfb${sf !== '' ? ' on' : ''}" aria-expanded="${sfOpen}">星：${(SF.find(([v]) => v === sf) || SF[0])[1]} ${sfOpen ? '▴' : '▾'}</button>${sfOpen ? `<div class="chips sf sfm">${SF.map(([v, t]) => `<button data-s="${v}" class="${v === sf ? 'on' : ''}">${t}${v !== '' && cnt[v] ? ' ' + cnt[v] : ''}</button>`).join('')}</div>` : ''}</div>${h || `<p class="empty">${empty}</p>`}${cur == 1 && !q.value.trim() ? statsHTML() : ''}${cur == 0 ? doneStrips() : ''}`;
+  $('SF').innerHTML = `<button class="sfb${sf !== '' ? ' on' : ''}" aria-expanded="${sfOpen}">星：${(SF.find(([v]) => v === sf) || SF[0])[1]} ${sfOpen ? '▴' : '▾'}</button>`;
+  $('L').innerHTML = `<div class="chips">${ch}</div>${sfOpen ? `<div class="chips sf sfm">${SF.map(([v, t]) => `<button data-s="${v}" class="${v === sf ? 'on' : ''}">${t}${v !== '' && cnt[v] ? ' ' + cnt[v] : ''}</button>`).join('')}</div>` : ''}${h || `<p class="empty">${empty}</p>`}${cur == 1 && !q.value.trim() ? statsHTML() : ''}${cur == 0 ? doneStrips() : ''}`;
   syncCat();
 }
 
@@ -688,6 +692,7 @@ if (mode == 'want') {
     const b = e.target.closest('.chips button'); if (!b) return;
     if (b.dataset.s != null) { sf = b.dataset.s; sfOpen = false; } else cur = +b.dataset.i;
     drawDone(); });
+  $('SF').addEventListener('click', e => { if (e.target.closest('.sfb')) { sfOpen = !sfOpen; drawDone(); } });
   q.addEventListener('input', drawDone);
 }
 $('CB').addEventListener('click', () => setCatOpen(!catOpen));
