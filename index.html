@@ -17,14 +17,28 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:"Hiragino Sans",
 button{font-family:inherit}
 .wrap{max-width:1400px;margin:0 auto;padding:32px 40px 24px;display:grid;grid-template-columns:minmax(0,1fr) 420px;grid-template-rows:auto auto 1fr;grid-template-areas:"hd sw" "art toc" "cap toc";gap:0 48px}
 .hd{grid-area:hd;min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-bottom:18px}
-.swrow{grid-area:sw;align-self:end}.art{grid-area:art;min-width:0}.cap{grid-area:cap;min-width:0}.toc{grid-area:toc;min-width:0}.mhero{grid-area:mh}
+.swrow{grid-area:sw;align-self:end;display:flex;gap:12px;align-items:stretch;position:relative}.art{grid-area:art;min-width:0}.cap{grid-area:cap;min-width:0}.toc{grid-area:toc;min-width:0}.mhero{grid-area:mh}
 .mark{width:84px;height:84px;border-radius:22%;background:var(--acc);color:var(--acct);display:grid;place-items:center;font-size:54px;font-weight:900;flex:none}
 img.mark{background:none;object-fit:contain;border-radius:0}
 .hd .t{font-size:44px;font-weight:900;letter-spacing:-.04em;line-height:1;margin:0;white-space:nowrap}
 .tg{font-size:13px;font-weight:800;margin-top:6px}
-.sw{display:grid;grid-template-columns:1fr 1fr;border:3px solid var(--ink);border-radius:12px;overflow:hidden;margin-bottom:18px}
+.sw{flex:1;min-width:0;display:grid;grid-template-columns:1fr 1fr;border:3px solid var(--ink);border-radius:12px;overflow:hidden;margin-bottom:18px}
 .sw a{display:flex;align-items:center;justify-content:center;padding:14px 12px;color:var(--ink);text-decoration:none;font-size:22px;font-weight:900;letter-spacing:-.02em}
 .sw a.on{background:var(--on);color:var(--ont)}
+/* カテゴリ選び: トグルの左のワンボタン（面は ALL か選択中カテゴリの絵アイコン）＋縦に開くメニュー */
+.catbtn{flex:none;display:flex;align-items:center;justify-content:center;gap:6px;min-width:64px;padding:0 10px;margin-bottom:18px;border:3px solid var(--ink);background:var(--bg);color:var(--ink);border-radius:12px;font:900 15px/1 "Hiragino Sans","Noto Sans JP",sans-serif;cursor:pointer}
+.catbtn.on{background:var(--on);color:var(--ont);border-color:var(--on)}
+.catbtn .cbi{display:flex}.catbtn .cbi svg{width:22px;height:22px;display:block}
+.catbtn .cba{font-size:15px;letter-spacing:.04em}
+.catbtn .cbv{font-size:10px}
+.catmenu{position:absolute;top:calc(100% + 2px);left:0;width:min(320px,calc(100vw - 32px));max-height:min(62svh,560px);overflow-y:auto;background:var(--bg);border:3px solid var(--ink);border-radius:12px;z-index:60;box-shadow:0 10px 24px rgba(17,17,17,.18)}
+.catmenu[hidden]{display:none}
+.cmr{display:flex;align-items:center;gap:12px;width:100%;padding:11px 14px;border:0;border-bottom:1px solid var(--ink);background:var(--bg);color:var(--ink);font:900 16px/1.25 "Hiragino Sans","Noto Sans JP",sans-serif;cursor:pointer;text-align:left}
+.cmr:last-child{border-bottom:0}
+.cmr.on{background:var(--on);color:var(--ont)}
+.cmr .cmi{flex:none;display:flex;width:34px;justify-content:center}
+.cmr .cmi svg{width:22px;height:22px;display:block}
+.cmr .cba{font-size:12px;letter-spacing:.04em;white-space:nowrap}
 .art{position:relative;display:grid;grid-template-columns:2fr 1fr;grid-template-rows:repeat(3,minmax(0,1fr));gap:6px;height:640px}
 .art img{width:100%;height:100%;object-fit:cover;border-radius:6px;display:block}.art>img:first-child{grid-row:span 3}
 .art.railon{display:block;container-type:size}
@@ -57,8 +71,8 @@ img.mark{background:none;object-fit:contain;border-radius:0}
 
 /* やった側: 時系列（年 → 月 → 日付・作品・場所） */
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 4px}
-.chips button,.bnav button{border:2px solid var(--ink);background:var(--bg);color:var(--ink);border-radius:10px;padding:7px 14px;font:900 15px/1.2 "Hiragino Sans","Noto Sans JP",sans-serif;cursor:pointer}
-.chips button.on,.bnav button.on{background:var(--on);color:var(--ont);border-color:var(--on)}
+.chips button{border:2px solid var(--ink);background:var(--bg);color:var(--ink);border-radius:10px;padding:7px 14px;font:900 15px/1.2 "Hiragino Sans","Noto Sans JP",sans-serif;cursor:pointer}
+.chips button.on{background:var(--on);color:var(--ont);border-color:var(--on)}
 .chips.sf{margin:4px 0 8px}.chips.sf button{padding:5px 10px;font-size:14px}.chips.sf b{align-self:center;font-size:14px;margin-right:2px}
 .tx .st{display:block;color:var(--acc);font-size:14px;letter-spacing:1px}
 .find{display:block;width:100%;margin:12px 0 0;border:2px solid var(--ink);border-radius:10px;padding:10px 14px;font:800 15px/1.2 "Hiragino Sans","Noto Sans JP",sans-serif;color:var(--ink);background:var(--bg);-webkit-appearance:none;appearance:none}
@@ -92,7 +106,7 @@ footer summary{cursor:pointer;font-weight:900;font-size:13px;list-style:none}foo
 footer summary::after{content:' ＋'}footer details[open] summary::after{content:' −'}footer details[open] summary{margin-bottom:6px}
 footer .nw{white-space:nowrap}
 
-.mm,.mhero,.bnav{display:none}
+.mm,.mhero{display:none}
 @media(max-width:900px){
  .wrap{grid-template-columns:1fr;grid-template-rows:none;grid-template-areas:"sw" "mh" "toc";padding:14px 16px 24px}
  .hd,.art,.cap{display:none!important}
@@ -101,27 +115,22 @@ footer .nw{white-space:nowrap}
  .swrow{position:-webkit-sticky;position:sticky;top:0;z-index:40;background:var(--bg);display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;margin:-14px -16px 12px;padding:12px 16px 8px}
  .mm{display:grid;width:58px;height:58px;font-size:36px;flex:none}
  .sw{flex:1;margin:0;height:58px}.sw a{padding:0 8px;font-size:19px}
- .mhero{display:flex;flex-direction:column;position:relative;height:calc(100svh - 176px - env(safe-area-inset-bottom));min-height:420px}
+ .mhero{display:flex;flex-direction:column;position:relative;height:calc(100svh - 118px - env(safe-area-inset-bottom));min-height:420px}
  .want .mhero{container-type:size;min-width:0}.want .pg{flex:1;min-height:0;min-width:0;grid-template-rows:repeat(3,minmax(0,1fr));grid-template-columns:none;grid-auto-flow:column dense;grid-auto-columns:calc((100cqh - 10px) / 3 * 2 / 3);overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none}.want .pg::-webkit-scrollbar{display:none}.want .pg img{height:100%;min-height:0;aspect-ratio:auto}
  .mhero .go{flex:none}
  .pg{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}.pg img,.pg .ph{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:5px;display:block}
  .pg>:first-child{grid-column:span 2;grid-row:span 2}
  .go{display:block;width:100%;margin-top:12px;border:0;border-radius:10px;background:var(--on);color:var(--ont);padding:14px;font:900 16px/1 "Hiragino Sans",sans-serif;cursor:pointer}
  .find{margin-top:0}.done .toc .yy:first-of-type{margin-top:18px}
- .bnav{display:flex;position:fixed;left:0;right:0;bottom:0;background:var(--bg);padding:8px 4px calc(8px + env(safe-area-inset-bottom));gap:3px;overflow-x:hidden;z-index:50;-webkit-transform:translateZ(0);transform:translateZ(0)}
- .bnav::-webkit-scrollbar{display:none}
- .bnav button{flex:none;padding:9px 14px}
- /* カテゴリは絵のアイコン: 太枠の箱にピクトグラムをど真ん中へ。全幅均等割りで横スライド無し */
- .bnav button.ic{flex:1 1 0;min-width:0;height:42px;padding:0;display:flex;align-items:center;justify-content:center;font-size:clamp(11px,3.6vw,16px);line-height:1;white-space:nowrap}
- .bnav button.ic svg{width:clamp(12px,4.2vw,17px);height:clamp(12px,4.2vw,17px);flex:none;display:block}
- .bnav button.ic.all{flex-grow:1.7;font-size:clamp(8.5px,2.6vw,10.5px);letter-spacing:.05em}
- footer{padding:18px 16px calc(96px + env(safe-area-inset-bottom));margin-top:24px}
+ .catbtn{margin-bottom:0}
+ .catmenu{left:16px}
+ footer{padding:18px 16px calc(40px + env(safe-area-inset-bottom));margin-top:24px}
 }
 .go{display:none}@media(max-width:900px){.go{display:block}}
 /* スマホのやりたい画面: 縦には動かさない。出典は画像の下の隙間に小さく置き、押すと上に開く */
 @media(max-width:900px){
  html:has(body.want),body.want{height:100%;overflow:hidden;overscroll-behavior:none}
- .want footer{position:fixed;right:10px;bottom:calc(62px + env(safe-area-inset-bottom));margin:0;padding:0;border:0;z-index:45;max-width:calc(100% - 20px);font-size:10px;line-height:1.6}
+ .want footer{position:fixed;right:10px;bottom:calc(12px + env(safe-area-inset-bottom));margin:0;padding:0;border:0;z-index:45;max-width:calc(100% - 20px);font-size:10px;line-height:1.6}
  .want footer summary{text-align:right;opacity:.55;list-style:none;cursor:pointer}.want footer summary::-webkit-details-marker{display:none}
  .want footer details[open]{background:var(--bg);border:2px solid var(--ink);border-radius:10px;padding:8px 10px;max-height:50svh;overflow:auto}
 }
@@ -233,12 +242,11 @@ footer .nw{white-space:nowrap}
 <body>
 <div class="wrap">
 <div class="hd" id="HD"><img class="mark" src="logo.png" alt=""><div><h1 class="t">あそび台帳</h1><div class="tg">やりたいこと・やったことリスト</div></div></div>
-<div class="swrow"><img class="mark mm" src="logo.png" alt=""><nav class="sw" id="S"></nav></div>
+<div class="swrow"><img class="mark mm" src="logo.png" alt=""><button class="catbtn" id="CB" aria-haspopup="true" aria-expanded="false"></button><div class="catmenu" id="CM" hidden></div><nav class="sw" id="S"></nav></div>
 <div class="art" id="A"></div><p class="cap" id="C"></p>
 <div class="mhero" id="MH"></div>
 <div class="toc"><h2 id="T"></h2><input type="search" class="find" id="q" placeholder="作品名でしぼり込む" aria-label="作品名でしぼり込む"><div id="L"></div></div>
 </div>
-<nav class="bnav" id="BN"></nav>
 <details class="oshi" id="OSHI" hidden><summary>★ 推しリスト <span id="oshiN"></span></summary>
 <form id="oshiF" autocomplete="off"><input id="oshiQ" placeholder="アーティスト・漫画・作品名" aria-label="推しの名前" required>
 <select id="oshiK" aria-label="種類"><option>アーティスト</option><option>漫画</option><option>アニメ</option><option>声優</option><option>その他</option></select>
@@ -366,7 +374,7 @@ const SHORT = {'アニメ人気1000':'アニメ','映画メジャー1000':'映�
   '遊園地アトラクション':'遊園地','日本の世界遺産':'世界遺産','サウナ名店':'サウナ','定番バケットリスト':'定番','前に自分で言ったもの':'自分の言葉',
   'アニメ系イベント（東京圏）':'アニメイベント','今後のイベント（東京圏）':'イベント','ライブ・フェス・コンサート':'ライブ'};
 const short = n => SHORT[n] || n;
-// 下部バーのカテゴリボタンは絵のアイコン（ピクトグラム）。ぜんぶ・すべてだけ ALL の文字。フルネームは title / aria-label に残す
+// カテゴリの絵アイコン（ピクトグラム）。ぜんぶ・すべてだけ ALL の文字。フルネームは title / aria-label に残す
 // アイコンは currentColor で描くので、選択中（.on の青地）では自動で白く反転する。未登録カテゴリは汎用の◎に落とす
 const IC = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
 const DT = (cx, cy, r) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="currentColor" stroke="none"/>`;
@@ -390,7 +398,23 @@ const ICONS = {anime1000: I_TV, movies1000: I_FILM, manga1000: I_BOOK, prefectur
   attractions: I_FERRIS, 'heritage-jp': I_CASTLE, sauna100: I_SAUNA, bucket100: I_STAR, countries: I_GLOBE, 'my-words': I_WORDS,
   'anime-events': I_TICKET, 'music-events': I_MIC, 'events-2026': I_CAL};
 const TL_ICON = {'すべて': 'ALL', '映画': I_FILM, 'サウナ': I_SAUNA, 'イベント': I_CAL, 'アニメ': I_TV, '漫画': I_BOOK, '場所': I_PIN};
-const navBtn = (i, content, label) => `<button class="ic${content === 'ALL' ? ' all' : ''}${i == cur ? ' on' : ''}" data-i="${i}" title="${esc(label)}" aria-label="${esc(label)}">${content}</button>`;
+// カテゴリ選びは上部のワンボタン＋縦メニュー（旧: 下部バー）。ボタンの面は ALL か選択中カテゴリのアイコンだけ（320pxでもトグルと並べて収まる大きさに）
+let catOpen = false;
+const catList = () => mode == 'want'
+  ? TABS.map((p, i) => ({ i, icon: p === MIX ? 'ALL' : (ICONS[p.slug] || I_GEN), name: p === MIX ? 'ぜんぶ' : short(p.name) }))
+  : TLC.map((c, i) => ({ i, icon: TL_ICON[c] || I_GEN, name: c }));
+function renderCatMenu() {
+  $('CM').innerHTML = catList().map(x => `<button class="cmr${x.i == cur ? ' on' : ''}" data-i="${x.i}"><span class="cmi">${x.icon === 'ALL' ? '<span class="cba">ALL</span>' : x.icon}</span><span class="cmn">${esc(x.name)}</span></button>`).join('');
+}
+function syncCat() {
+  const list = catList(), it = list[cur] || list[0], cb = $('CB');
+  cb.innerHTML = (it.icon === 'ALL' ? '<span class="cba">ALL</span>' : `<span class="cbi">${it.icon}</span>`) + '<span class="cbv">▾</span>';
+  cb.classList.toggle('on', cur != 0);
+  cb.title = 'カテゴリ: ' + it.name;
+  cb.setAttribute('aria-label', 'カテゴリを選ぶ（いま: ' + it.name + '）');
+  if (catOpen) renderCatMenu();
+}
+function setCatOpen(o) { catOpen = o; $('CM').hidden = !o; $('CB').setAttribute('aria-expanded', String(o)); if (o) renderCatMenu(); }
 const stat = p => { let done = 0, left = 0;
   for (const it of p.items) { const v = verdictOf(p.slug, it.id); if (v === 'done') done++; else if (!v) left++; }
   return { done, left, total: p.items.length, pct: Math.round(100 * done / p.items.length) }; };
@@ -528,7 +552,7 @@ function drawDone() {
   const SF = [['', 'すべて'], ['5', '★5'], ['4', '★4'], ['3', '★3'], ['2', '★2'], ['1', '★1'], ['0', '未評価']];
   const empty = TL_PACKS[cur] && sf !== '' ? '星は映画・サウナ・アニメにだけ付きます。' : cur == 3 && !q.value.trim() ? 'まだ「行った」にしたイベントはありません。やりたい側のイベントを押して「行った」にすると、ここに日付順で入ります。' : 'みつかりませんでした。';
   $('L').innerHTML = `<div class="chips">${ch}</div><div class="sfw"><button class="sfb${sf !== '' ? ' on' : ''}" aria-expanded="${sfOpen}">星：${(SF.find(([v]) => v === sf) || SF[0])[1]} ${sfOpen ? '▴' : '▾'}</button>${sfOpen ? `<div class="chips sf sfm">${SF.map(([v, t]) => `<button data-s="${v}" class="${v === sf ? 'on' : ''}">${t}${v !== '' && cnt[v] ? ' ' + cnt[v] : ''}</button>`).join('')}</div>` : ''}</div>${h || `<p class="empty">${empty}</p>`}${cur == 1 && !q.value.trim() ? statsHTML() : ''}${cur == 0 ? doneStrips() : ''}`;
-  $('BN').innerHTML = TLC.map((c, i) => navBtn(i, TL_ICON[c] || I_GEN, c)).join('');
+  syncCat();
 }
 
 // ═══════════════ ミックス: アニメ以外も混ぜた「やりたい」の表紙（最初のタブ） ═══════════════
@@ -570,7 +594,7 @@ function drawWant() {
   const p = TABS[cur];
   if (p === MIX) {
     $('MH').innerHTML = `<div class="pg">${mixPool().slice(0, 60).map(mixTile).join('')}</div>`;
-    $('BN').innerHTML = TABS.map((p, i) => navBtn(i, p === MIX ? 'ALL' : (ICONS[p.slug] || I_GEN), p === MIX ? 'ぜんぶ' : short(p.name))).join('');
+    syncCat();
     return;
   }
   const s = stat(p);
@@ -583,7 +607,7 @@ function drawWant() {
   const pool = [...wantPool(p), ...shuffle(noImg.filter(it => verdictOf(p.slug, it.id) === 'want')), ...shuffle(noImg.filter(it => verdictOf(p.slug, it.id) !== 'want'))];
   $('MH').innerHTML = `<div class="pg">${pool.slice(0, 60).map((it, i) => mixTile({ p, it }, i)).join('')}</div>` +
     (s.done < s.total ? `<button class="go" data-slug="${esc(p.slug)}">まとめて判定する</button>` : '');
-  $('BN').innerHTML = TABS.map((p, i) => navBtn(i, p === MIX ? 'ALL' : (ICONS[p.slug] || I_GEN), p === MIX ? 'ぜんぶ' : short(p.name))).join('');
+  syncCat();
 }
 
 // 目次と表紙の下の一言（判定が変わるたびに描き直す）
@@ -666,7 +690,10 @@ if (mode == 'want') {
     drawDone(); });
   q.addEventListener('input', drawDone);
 }
-$('BN').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; cur = +b.dataset.i; redraw(); scrollTo({ top: 0, behavior: 'smooth' }); });
+$('CB').addEventListener('click', () => setCatOpen(!catOpen));
+$('CM').addEventListener('click', e => { const r = e.target.closest('.cmr'); if (!r) return; cur = +r.dataset.i; setCatOpen(false); redraw(); scrollTo({ top: 0, behavior: 'smooth' }); });
+document.addEventListener('click', e => { if (catOpen && !e.target.closest('#CM,#CB')) setCatOpen(false); });
+document.addEventListener('keydown', e => { if (catOpen && e.key == 'Escape') setCatOpen(false); });
 redraw();
 
 // ═══════════════ 送信箱: 即ローカル保存 → まとめてGASへ。失敗しても残って次に送る ═══════════════
