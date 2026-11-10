@@ -108,9 +108,12 @@ footer .nw{white-space:nowrap}
  .pg>:first-child{grid-column:span 2;grid-row:span 2}
  .go{display:block;width:100%;margin-top:12px;border:0;border-radius:10px;background:var(--on);color:var(--ont);padding:14px;font:900 16px/1 "Hiragino Sans",sans-serif;cursor:pointer}
  .find{margin-top:0}.done .toc .yy:first-of-type{margin-top:18px}
- .bnav{display:flex;position:fixed;left:0;right:0;bottom:0;background:var(--bg);padding:8px 10px calc(8px + env(safe-area-inset-bottom));gap:6px;overflow-x:auto;scrollbar-width:none;z-index:50;-webkit-transform:translateZ(0);transform:translateZ(0)}
+ .bnav{display:flex;position:fixed;left:0;right:0;bottom:0;background:var(--bg);padding:8px 4px calc(8px + env(safe-area-inset-bottom));gap:3px;overflow-x:hidden;z-index:50;-webkit-transform:translateZ(0);transform:translateZ(0)}
  .bnav::-webkit-scrollbar{display:none}
  .bnav button{flex:none;padding:9px 14px}
+ /* カテゴリは1文字アイコン: ロゴ (.mm) と同じく、太枠の箱に太字1文字をど真ん中へ。全幅均等割りで横スライド無し */
+ .bnav button.ic{flex:1 1 0;min-width:0;height:42px;padding:0;display:flex;align-items:center;justify-content:center;font-size:clamp(11px,3.6vw,16px);line-height:1;white-space:nowrap}
+ .bnav button.ic.all{flex-grow:1.7;font-size:clamp(8.5px,2.6vw,10.5px);letter-spacing:.05em}
  footer{padding:18px 16px calc(96px + env(safe-area-inset-bottom));margin-top:24px}
 }
 .go{display:none}@media(max-width:900px){.go{display:block}}
@@ -362,6 +365,12 @@ const SHORT = {'アニメ人気1000':'アニメ','映画メジャー1000':'映�
   '遊園地アトラクション':'遊園地','日本の世界遺産':'世界遺産','サウナ名店':'サウナ','定番バケットリスト':'定番','前に自分で言ったもの':'自分の言葉',
   'アニメ系イベント（東京圏）':'アニメイベント','今後のイベント（東京圏）':'イベント','ライブ・フェス・コンサート':'ライブ'};
 const short = n => SHORT[n] || n;
+// 下部バーのカテゴリボタンは1文字アイコン（ぜんぶ・すべてだけ ALL）。フルネームは title / aria-label に残す
+// 衝突回避: アニメ=ア に対して アニメイベント=ベ、イベント=イ、自分の言葉=言、世界遺産=遺
+const GLYPH = {anime1000:'ア',movies1000:'映',manga1000:'漫',prefectures:'都',eats100:'食','tokyo-spots':'場',attractions:'遊',
+  'heritage-jp':'遺',sauna100:'サ',bucket100:'定',countries:'国','my-words':'言','anime-events':'ベ','music-events':'ラ','events-2026':'イ'};
+const TL_GLYPH = {'すべて':'ALL','映画':'映','サウナ':'サ','イベント':'イ','アニメ':'ア','漫画':'漫','場所':'場'};
+const navBtn = (i, glyph, label) => `<button class="ic${glyph === 'ALL' ? ' all' : ''}${i == cur ? ' on' : ''}" data-i="${i}" title="${esc(label)}" aria-label="${esc(label)}">${esc(glyph)}</button>`;
 const stat = p => { let done = 0, left = 0;
   for (const it of p.items) { const v = verdictOf(p.slug, it.id); if (v === 'done') done++; else if (!v) left++; }
   return { done, left, total: p.items.length, pct: Math.round(100 * done / p.items.length) }; };
@@ -499,7 +508,7 @@ function drawDone() {
   const SF = [['', 'すべて'], ['5', '★5'], ['4', '★4'], ['3', '★3'], ['2', '★2'], ['1', '★1'], ['0', '未評価']];
   const empty = TL_PACKS[cur] && sf !== '' ? '星は映画・サウナ・アニメにだけ付きます。' : cur == 3 && !q.value.trim() ? 'まだ「行った」にしたイベントはありません。やりたい側のイベントを押して「行った」にすると、ここに日付順で入ります。' : 'みつかりませんでした。';
   $('L').innerHTML = `<div class="chips">${ch}</div><div class="sfw"><button class="sfb${sf !== '' ? ' on' : ''}" aria-expanded="${sfOpen}">星：${(SF.find(([v]) => v === sf) || SF[0])[1]} ${sfOpen ? '▴' : '▾'}</button>${sfOpen ? `<div class="chips sf sfm">${SF.map(([v, t]) => `<button data-s="${v}" class="${v === sf ? 'on' : ''}">${t}${v !== '' && cnt[v] ? ' ' + cnt[v] : ''}</button>`).join('')}</div>` : ''}</div>${h || `<p class="empty">${empty}</p>`}${cur == 1 && !q.value.trim() ? statsHTML() : ''}${cur == 0 ? doneStrips() : ''}`;
-  $('BN').innerHTML = ch;
+  $('BN').innerHTML = TLC.map((c, i) => navBtn(i, TL_GLYPH[c] || [...c][0], c)).join('');
 }
 
 // ═══════════════ ミックス: アニメ以外も混ぜた「やりたい」の表紙（最初のタブ） ═══════════════
@@ -541,7 +550,7 @@ function drawWant() {
   const p = TABS[cur];
   if (p === MIX) {
     $('MH').innerHTML = `<div class="pg">${mixPool().slice(0, 60).map(mixTile).join('')}</div>`;
-    $('BN').innerHTML = TABS.map((p, i) => `<button class="${i == cur ? 'on' : ''}" data-i="${i}">${esc(p === MIX ? 'ぜんぶ' : short(p.name))}</button>`).join('');
+    $('BN').innerHTML = TABS.map((p, i) => navBtn(i, p === MIX ? 'ALL' : (GLYPH[p.slug] || [...short(p.name)][0]), p === MIX ? 'ぜんぶ' : short(p.name))).join('');
     return;
   }
   const s = stat(p);
@@ -554,7 +563,7 @@ function drawWant() {
   const pool = [...wantPool(p), ...shuffle(noImg.filter(it => verdictOf(p.slug, it.id) === 'want')), ...shuffle(noImg.filter(it => verdictOf(p.slug, it.id) !== 'want'))];
   $('MH').innerHTML = `<div class="pg">${pool.slice(0, 60).map((it, i) => mixTile({ p, it }, i)).join('')}</div>` +
     (s.done < s.total ? `<button class="go" data-slug="${esc(p.slug)}">まとめて判定する</button>` : '');
-  $('BN').innerHTML = TABS.map((p, i) => `<button class="${i == cur ? 'on' : ''}" data-i="${i}">${esc(p === MIX ? 'ぜんぶ' : short(p.name))}</button>`).join('');
+  $('BN').innerHTML = TABS.map((p, i) => navBtn(i, p === MIX ? 'ALL' : (GLYPH[p.slug] || [...short(p.name)][0]), p === MIX ? 'ぜんぶ' : short(p.name))).join('');
 }
 
 // 目次と表紙の下の一言（判定が変わるたびに描き直す）
