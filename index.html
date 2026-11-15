@@ -308,6 +308,9 @@ const $ = id => document.getElementById(id);
 const mode = new URLSearchParams(location.search).get('mode') === 'done' ? 'done' : 'want';
 document.body.className = mode;
 const TODAY = new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
+// 終わったイベント（終了日、無ければ開始日が今日(JST)より前）は「やりたい」側に出さない。データは消さない・日付の無い物は対象外
+const TODAY_JST = new Date(Date.now() + 9 * 36e5).toISOString().slice(0, 10);
+const isEnded = it => { const d = it.end || it.start; return !!d && d < TODAY_JST; };
 const WD = '日月火水木金土';
 
 // 作品シートの引き当て表。画像に data-k を付けて、押された画像からここを引く
@@ -633,7 +636,7 @@ function drawWant() {
   // 小さい枠は軽い medium 画像（大は1枚目だけ large）。全部すぐ読み始め、見えている9枚を先に
   // パック単体の表紙も「ぜんぶ」と同じ説明文つきタイル（mixTile）で出す。
   // 画像の無い物は wantPool が落とすので、題名と日付だけのタイルとして後ろに足す（やりたいと言った物を先に）
-  const noImg = p.items.filter(it => !it.img && !isHiddenV(p.slug, verdictOf(p.slug, it.id)));
+  const noImg = p.items.filter(it => !it.img && !isEnded(it) && !isHiddenV(p.slug, verdictOf(p.slug, it.id)));
   const pool = [...wantPool(p), ...shuffle(noImg.filter(it => verdictOf(p.slug, it.id) === 'want')), ...shuffle(noImg.filter(it => verdictOf(p.slug, it.id) !== 'want'))];
   $('MH').innerHTML = `<div class="pg">${pool.slice(0, 60).map((it, i) => mixTile({ p, it }, i)).join('')}</div>` +
     (s.done < s.total ? `<button class="go" data-slug="${esc(p.slug)}">まとめて判定する</button>` : '');
@@ -651,7 +654,7 @@ function drawToc() {
 // 開くたびに違うポスターが先頭に来るように混ぜる
 const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
 // やりたい側に出すのは「まだ」の分だけ。やりたいと言ったものを先に、残りは未判定・観てない
-const wantPool = p => { const left = p.items.filter(it => it.img && !isHiddenV(p.slug, verdictOf(p.slug, it.id)));   // 興味ないと言った物は表紙にも出さない
+const wantPool = p => { const left = p.items.filter(it => it.img && !isEnded(it) && !isHiddenV(p.slug, verdictOf(p.slug, it.id)));   // 興味ないと言った物は表紙にも出さない
   return [...shuffle(left.filter(it => verdictOf(p.slug, it.id) === 'want')), ...shuffle(left.filter(it => verdictOf(p.slug, it.id) !== 'want'))]; };
 // スマホの作品グリッド: ゆーっくり右から左へ送る。触ったら4秒止まる。端まで行ったら止まる。動きを減らす設定なら流さない
 (() => { let pos = null, el = null, hold = 0, t0 = 0; const still = matchMedia('(prefers-reduced-motion: reduce)');

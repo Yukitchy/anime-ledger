@@ -110,8 +110,11 @@ function detailUrl(slug, it) {
   return 'https://ja.wikipedia.org/wiki/Special:Search?search=' + encodeURIComponent(it.wiki || it.t);
 }
 
+// 終わったイベント（終了日、無ければ開始日が今日(JST)より前）は出さない。データは消さない
+const TODAY_JST = new Date(Date.now() + 9 * 36e5).toISOString().slice(0, 10);
+const isEnded = it => { const d = it.end || it.start; return !!d && d < TODAY_JST; };
 const groups = QUEST.packs.map(p => ({
-  p, items: p.items.filter(it => verdictOf(p.slug, it.id) === 'want')
+  p, items: p.items.filter(it => verdictOf(p.slug, it.id) === 'want' && !isEnded(it))
 })).filter(g => g.items.length);
 const total = groups.reduce((n, g) => n + g.items.length, 0);
 document.getElementById('total').textContent = total ? `全${total}件` : '';
