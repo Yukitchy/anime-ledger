@@ -981,9 +981,9 @@ function tasteSort(items) {
 function openSwipe(slug) {
   deckPack = PACKS.find(p => p.slug === slug);
   // 未判定が尽きたパック（アニメ等）は「やりたい」に残っている分を見直す
-  deck = deckPack.items.filter(it => !verdictOf(slug, it.id));
+  deck = deckPack.items.filter(it => !verdictOf(slug, it.id) && !isEnded(it));  // 終了イベントはデッキに出さない（データは消さない）
   // 見直しに出すのは「やりたい」「途中」だけ。「興味ない/観てない」と答えた物は二度と出さない
-  if (!deck.length) deck = shuffle(deckPack.items.filter(it => ['want', 'skip'].includes(verdictOf(slug, it.id))));
+  if (!deck.length) deck = shuffle(deckPack.items.filter(it => ['want', 'skip'].includes(verdictOf(slug, it.id)) && !isEnded(it)));
   if (slug === MUSIC_SLUG) deck = tasteSort(deck);
   undo = [];
   $('sw-name').textContent = deckPack.name;
