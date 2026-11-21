@@ -89,6 +89,7 @@ img.mark{background:none;object-fit:contain;border-radius:0}
 .tr img{width:44px;height:66px;object-fit:cover;border-radius:3px;display:block}
 .tx b{display:block;font-size:17px;font-weight:900;letter-spacing:-.02em;line-height:1.35}.tx span{font-size:13px;font-weight:700}
 .sec{font-size:14px;font-weight:800;border-bottom:6px solid var(--ink);padding-bottom:10px;margin:44px 0 12px}
+.sec.up{margin-top:18px}
 .mn{border-bottom:1px solid var(--ink)}.mn summary{cursor:pointer;padding:12px 0;font-size:18px;font-weight:900;letter-spacing:-.02em}.mn summary span{font-size:13px;font-weight:700;margin-left:8px}
 .dr{display:grid;grid-template-columns:48px 1fr auto;gap:10px;padding:6px 0;font-size:15px;font-weight:700;align-items:baseline}.dr i{font-style:normal;font-weight:900;text-align:right;white-space:nowrap}.dr em{font-style:normal;font-size:12px;border:2px solid var(--ink);border-radius:6px;padding:0 5px;margin-left:6px;white-space:nowrap}.dr u{text-decoration:none;color:var(--acc);letter-spacing:1px;white-space:nowrap}
 .yb{display:flex;align-items:flex-end;gap:10px;height:160px;border-bottom:3px solid var(--ink)}.yb div{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;font-size:13px;font-weight:900}.yb i{display:block;width:100%;max-width:56px;background:var(--on);border-radius:3px 3px 0 0;margin-top:3px}
@@ -472,6 +473,27 @@ const doneEvents = () => PACKS.filter(p => p.slug === 'anime-events' || p.slug =
   .map(it => ({ key: it.id, k: `q:${p.slug}:${it.id}`, title: it.t, date: wentOn(p.slug, it), cover: it.img, c: 'イベント',
                theater: (String(it.s || '').match(/（(.+?)）/) || [])[1] || '' })))
   .filter((x, i, a) => a.findIndex(y => y.title === x.title) === i);
+// これから行く予定: イベント系パックで「行きたい」にした、開催初日が今日(JST)より先の物。
+// 材料は見せ方パックではなく元のパックから取る（音楽の見せ方パックは同じ題名の別公演を1つに潰してしまうため）。
+// やったの年別時系列とは混ぜず、リストの上に日付の近い順で出す。両パックにある同じ催しは題名+日付で1つにまとめる
+const upcomingEvents = () => QUEST.packs.filter(p => p.slug === 'anime-events' || p.slug === 'events-2026').flatMap(p => p.items
+  .filter(it => it.start && it.start > TODAY_JST && verdictOf(p.slug, it.id) === 'want')
+  .map(it => { const head = String(it.s || '').split('・')[0];
+               return { key: it.id, k: `q:${p.slug}:${it.id}`, title: it.t, date: it.start, cover: it.img, c: 'イベント',
+                        theater: (head.match(/（(.+?)）/) || [])[1] || head }; }))
+  .filter((x, i, a) => a.findIndex(y => y.title === x.title && y.date === x.date) === i)
+  .sort((a, b) => a.date.localeCompare(b.date));
+function upcomingHTML() {
+  if (cur != 0 || q.value.trim() || sf !== '') return '';
+  const ups = upcomingEvents();
+  if (!ups.length) return '';
+  let h = `<h3 class="sec up">これから行く予定</h3>`;
+  for (const x of ups) { const dd = new Date(x.date + 'T00:00');
+    const yr = x.date.slice(0, 4) !== TODAY_JST.slice(0, 4) ? x.date.slice(0, 4) + '年' : '';
+    h += `<div class="tr" data-k="${esc(x.k)}"><div class="dt"><b>${dd.getDate()}</b><span>${dd.getMonth() + 1}月 ${WD[dd.getDay()]}</span></div>` +
+         `${rimg(x.cover, x.k)}<div class="tx"><b>${esc(x.title)}</b><span>${esc([x.theater, x.c, yr].filter(Boolean).join(' · '))}</span>${noteSpan(x.k)}</div></div>`; }
+  return h;
+}
 // 読書記録: 「読んだ/途中」の漫画にメモ（例「1-19巻読んだ」）を書くと、メモを書いた日の行として時系列に出る
 // メモを書き換えるたびに1行ずつ履歴として残る（同じ日に何度直しても、その日の最後の1行だけ）。最新の行にだけ今の判定（途中/読んだ）を付ける
 const readLog = () => PACKS.filter(p => p.slug === 'manga1000').flatMap(p => p.items.flatMap(it => {
@@ -584,7 +606,7 @@ function drawDone() {
   const SF = [['', 'すべて'], ['5', '★5'], ['4', '★4'], ['3', '★3'], ['2', '★2'], ['1', '★1'], ['0', '未評価']];
   const empty = TL_PACKS[cur] && sf !== '' ? '星は映画・サウナ・アニメにだけ付きます。' : cur == 3 && !q.value.trim() ? 'まだ「行った」にしたイベントはありません。やりたい側のイベントを押して「行った」にすると、ここに日付順で入ります。' : 'みつかりませんでした。';
   $('SF').innerHTML = `<button class="sfb${sf !== '' ? ' on' : ''}" aria-expanded="${sfOpen}">星：${(SF.find(([v]) => v === sf) || SF[0])[1]} ${sfOpen ? '▴' : '▾'}</button>`;
-  $('L').innerHTML = `<div class="chips">${ch}</div>${sfOpen ? `<div class="chips sf sfm">${SF.map(([v, t]) => `<button data-s="${v}" class="${v === sf ? 'on' : ''}">${t}${v !== '' && cnt[v] ? ' ' + cnt[v] : ''}</button>`).join('')}</div>` : ''}${h || `<p class="empty">${empty}</p>`}${cur == 1 && !q.value.trim() ? statsHTML() : ''}${cur == 0 ? doneStrips() : ''}`;
+  $('L').innerHTML = `<div class="chips">${ch}</div>${sfOpen ? `<div class="chips sf sfm">${SF.map(([v, t]) => `<button data-s="${v}" class="${v === sf ? 'on' : ''}">${t}${v !== '' && cnt[v] ? ' ' + cnt[v] : ''}</button>`).join('')}</div>` : ''}${upcomingHTML()}${h || `<p class="empty">${empty}</p>`}${cur == 1 && !q.value.trim() ? statsHTML() : ''}${cur == 0 ? doneStrips() : ''}`;
   syncCat();
 }
 
